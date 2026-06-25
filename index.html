@@ -28,6 +28,8 @@
       --eur-dark:  #1A7A44;
       --vmf-fill:  #3A9FE8;
       --vmf-dark:  #1A5A8A;
+      --gma-fill:  #E8B84B;
+      --gma-dark:  #8A6A1A;
       --accent:    #F0B429;
       --danger:    #E05252;
       --reefer:    #E8734A;
@@ -65,9 +67,11 @@
     .pallet-card:hover { border-color: var(--muted); }
     .pallet-card.eur { border-left: 3px solid var(--eur-fill); }
     .pallet-card.vmf { border-left: 3px solid var(--vmf-fill); }
+    .pallet-card.gma { border-left: 3px solid var(--gma-fill); }
     .pallet-card .card-title { font-weight: 600; font-size: 13px; margin-bottom: 3px; }
     .pallet-card.eur .card-title { color: var(--eur-fill); }
     .pallet-card.vmf .card-title { color: var(--vmf-fill); }
+    .pallet-card.gma .card-title { color: var(--gma-fill); }
     .pallet-card .card-dims { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
     .pallet-card .card-hint { font-size: 10px; color: var(--muted); margin-top: 5px; }
 
@@ -75,6 +79,7 @@
     .orient-btn button { flex: 1; padding: 4px 0; border-radius: 4px; border: 1px solid var(--border); background: var(--panel2); color: var(--muted); font-size: 10px; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all .15s; }
     .orient-btn button.active-eur { background: var(--eur-dark); color: var(--eur-fill); border-color: var(--eur-fill); }
     .orient-btn button.active-vmf { background: var(--vmf-dark); color: var(--vmf-fill); border-color: var(--vmf-fill); }
+    .orient-btn button.active-gma { background: var(--gma-dark); color: var(--gma-fill); border-color: var(--gma-fill); }
 
     /* Fill button */
     .fill-section { display: flex; flex-direction: column; gap: 7px; }
@@ -82,15 +87,22 @@
     .fill-type-btn { flex: 1; padding: 5px 0; border-radius: 4px; border: 1px solid var(--border); background: var(--panel2); color: var(--muted); font-size: 11px; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all .15s; }
     .fill-type-btn.sel-eur { background: var(--eur-dark); color: var(--eur-fill); border-color: var(--eur-fill); }
     .fill-type-btn.sel-vmf { background: var(--vmf-dark); color: var(--vmf-fill); border-color: var(--vmf-fill); }
+    .fill-type-btn.sel-gma { background: var(--gma-dark); color: var(--gma-fill); border-color: var(--gma-fill); }
     #btn-fill { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--accent); background: rgba(240,180,41,0.12); color: var(--accent); font-size: 12px; font-family: 'JetBrains Mono', monospace; font-weight: 600; cursor: pointer; letter-spacing: .06em; transition: all .15s; }
     #btn-fill:hover { background: rgba(240,180,41,0.25); }
 
     /* Canvas Area */
-    #canvas-area { background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 20px 20px 12px; overflow: hidden; position: relative; }
+    #canvas-area {
+      background: var(--bg);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 10px; padding: 20px 20px 12px;
+      overflow: hidden;
+      position: relative;
+    }
     #canvas-wrapper { position: relative; margin-left: 44px; margin-top: 20px; }
     #lbl-top, #lbl-left, #lbl-door { position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); pointer-events: none; }
     #lbl-top { top: -18px; left: 0; right: 0; text-align: center; }
-    #lbl-left { left: -44px; top: 0; bottom: 0; writing-mode: vertical-rl; transform: rotate(180deg); display: flex; align-items: center; justify-content: center; }
+    #lbl-left { left: -44px; top: 0; bottom: 0; writing-mode: vertical-rl; transform: rotate(0deg); display: flex; align-items: center; justify-content: center; }
     #lbl-door { bottom: -20px; right: 0; text-align: right; font-size: 10px; color: var(--accent); }
     #main-canvas { display: block; cursor: crosshair; }
     #canvas-hint { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
@@ -115,13 +127,68 @@
     .usage-bar-track { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 3px; }
     .usage-bar-fill { height: 100%; border-radius: 3px; background: var(--eur-fill); transition: width .3s ease; }
     .usage-label { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 3px; }
-    .placed-list { display: flex; flex-direction: column; gap: 3px; max-height: 220px; overflow-y: auto; }
+    .placed-list { display: flex; flex-direction: column; gap: 3px; max-height: 440px; overflow-y: auto; }
     .placed-item { display: flex; justify-content: space-between; align-items: center; background: var(--panel2); border: 1px solid var(--border); border-radius: 4px; padding: 5px 8px; font-size: 11px; cursor: pointer; }
     .placed-item .pi-label { font-family: 'JetBrains Mono', monospace; }
     .placed-item.eur .pi-label { color: var(--eur-fill); }
     .placed-item.vmf .pi-label { color: var(--vmf-fill); }
+    .placed-item.gma .pi-label { color: var(--gma-fill); }
     .placed-item .pi-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; }
     .placed-item .pi-del:hover { color: var(--danger); }
+
+
+    /* ── Mode Tabs ── */
+    .mode-tabs { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+    .mode-tab {
+      flex: 1; padding: 7px 4px; border: none; background: var(--panel2);
+      color: var(--muted); font-size: 10px; font-family: 'JetBrains Mono', monospace;
+      cursor: pointer; transition: all .15s; text-align: center; line-height: 1.4;
+      border-right: 1px solid var(--border);
+    }
+    .mode-tab:last-child { border-right: none; }
+    .mode-tab:hover { color: var(--text); }
+    .mode-tab.active-fill   { background: rgba(46,204,113,0.15);  color: var(--eur-fill);  }
+    .mode-tab.active-check  { background: rgba(240,180,41,0.10);  color: var(--accent);    }
+    .mode-tab.active-manual { background: rgba(58,159,232,0.15);  color: var(--vmf-fill);  }
+    .mode-tab .tab-icon { font-size: 14px; display: block; margin-bottom: 2px; }
+    .mode-tab .tab-label { display: block; }
+
+    /* ── Mode Panels ── */
+    .mode-panel { display: none; flex-direction: column; gap: 12px; }
+    .mode-panel.active { display: flex; }
+
+    /* ── Mode indicator pill on canvas ── */
+    #mode-indicator {
+      position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+      padding: 3px 12px; border-radius: 12px; font-size: 10px;
+      font-family: 'JetBrains Mono', monospace; pointer-events: none;
+      border: 1px solid; white-space: nowrap;
+    }
+    #mode-indicator.fill   { background: rgba(46,204,113,0.12); color: var(--eur-fill);  border-color: rgba(46,204,113,0.3); }
+    #mode-indicator.check  { background: rgba(240,180,41,0.12); color: var(--accent);    border-color: rgba(240,180,41,0.3); }
+    #mode-indicator.manual { background: rgba(58,159,232,0.12); color: var(--vmf-fill);  border-color: rgba(58,159,232,0.3); }
+
+    /* ── Hold panel ── */
+    .hold-panel {
+      background: rgba(240,180,41,0.08); border: 1px solid rgba(240,180,41,0.3);
+      border-radius: 8px; padding: 14px 12px; text-align: center;
+    }
+    .hold-panel .hold-icon { font-size: 28px; margin-bottom: 8px; }
+    .hold-panel .hold-title { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+    .hold-panel .hold-desc { font-size: 11px; color: var(--muted); line-height: 1.6; }
+
+    /* ── Manual mode hint ── */
+    .manual-hint {
+      background: var(--panel2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 10px 12px;
+      font-size: 11px; color: var(--muted); line-height: 1.8;
+    }
+    .manual-hint .hint-row { display: flex; align-items: baseline; gap: 8px; }
+    .manual-hint .hint-key {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 3px; padding: 1px 5px; color: var(--text); white-space: nowrap; flex-shrink: 0;
+    }
 
     /* Legend */
     .legend-item { display: flex; align-items: center; gap: 8px; font-size: 11px; }
@@ -134,75 +201,177 @@
   <header id="header">
     <div class="logo">CONTAINER<span>/</span>LOAD<span>_</span>PLANNER</div>
     <div class="hdr-div"></div>
-    <div class="subtitle">上面断面図 — パレット配置シミュレーター</div>
+    <div class="subtitle" data-i18n="subtitle">上面断面図 — パレット配置シミュレーター</div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;">🌐</span>
+      <select id="lang-select" onchange="setLang(this.value)"
+        style="background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:5px;font-size:12px;font-family:'Inter',sans-serif;cursor:pointer;outline:none;">
+        <option value="ja">日本語</option>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+        <option value="it">Italiano</option>
+      </select>
+    </div>
   </header>
 
   <aside id="left-panel">
 
-    <!-- Container selector -->
+    <!-- Container selector (常時表示) -->
     <div>
-      <div class="sec-label">コンテナ選択</div>
+      <div class="sec-label" data-i18n="containerSelect">コンテナ選択</div>
       <div class="container-select">
         <select id="container-type">
-          <option value="20dry">20ft ドライコンテナ</option>
-          <option value="40dry" selected>40ft ドライコンテナ</option>
-          <option value="20ref">20ft リーファーコンテナ</option>
-          <option value="40ref">40ft リーファーコンテナ</option>
+          <option value="20dry" selected data-i18n="c20dry">20ft ドライコンテナ</option>
+          <option value="40dry" data-i18n="c40dry">40ft ドライコンテナ</option>
+          <option value="20ref" data-i18n="c20ref">20ft リーファーコンテナ</option>
+          <option value="40ref" data-i18n="c40ref">40ft リーファーコンテナ</option>
         </select>
       </div>
       <div class="container-dims">
-        <div class="dim-chip"><div class="val" id="dim-l">-</div><div class="key">内寸 長さ (mm)</div></div>
-        <div class="dim-chip"><div class="val" id="dim-w">-</div><div class="key">内寸 幅 (mm)</div></div>
+        <div class="dim-chip"><div class="val" id="dim-l">-</div><div class="key" data-i18n="dimL">内寸 長さ (mm)</div></div>
+        <div class="dim-chip"><div class="val" id="dim-w">-</div><div class="key" data-i18n="dimW">内寸 幅 (mm)</div></div>
       </div>
-      <div id="reefer-notice">⚠ リーファー：ジェネレータ搭載により有効床面積が減少します。図面前端のハッチ部分が機器占有エリアです。</div>
+      <div id="reefer-notice" data-i18n="reeferNotice">⚠ リーファー：ジェネレータ搭載により有効床面積が減少します。</div>
     </div>
 
-    <!-- Pallet cards -->
+    <!-- Mode Tabs -->
     <div>
-      <div class="sec-label">パレット選択 &amp; 向き</div>
-      <div class="pallet-card eur" draggable="true" id="drag-eur" data-type="EUR">
-        <div class="card-title">EUR パレット</div>
-        <div class="card-dims">1200 × 800 mm</div>
-        <div class="card-hint">ドラッグ or キャンバスをクリック</div>
-        <div class="orient-btn">
-          <button id="eur-h" onclick="setOrient('EUR','H')">H: 1200幅 × 800奥</button>
-          <button id="eur-v" onclick="setOrient('EUR','V')">V: 800幅 × 1200奥</button>
-        </div>
-      </div>
-      <div class="pallet-card vmf" draggable="true" id="drag-vmf" data-type="VMF" style="margin-top:8px">
-        <div class="card-title">VMF パレット</div>
-        <div class="card-dims">1200 × 1000 mm</div>
-        <div class="card-hint">ドラッグ or キャンバスをクリック</div>
-        <div class="orient-btn">
-          <button id="vmf-h" onclick="setOrient('VMF','H')">H: 1200幅 × 1000奥</button>
-          <button id="vmf-v" onclick="setOrient('VMF','V')">V: 1000幅 × 1200奥</button>
-        </div>
+      <div class="sec-label" data-i18n="modeLabel">操作モード</div>
+      <div class="mode-tabs">
+        <button class="mode-tab active-fill" id="tab-fill" onclick="setMode('fill')">
+          <span class="tab-icon">▦</span>
+          <span class="tab-label" data-i18n="modeFill">Fill</span>
+        </button>
+        <button class="mode-tab" id="tab-check" onclick="setMode('check')">
+          <span class="tab-icon">✔</span>
+          <span class="tab-label" data-i18n="modeCheck">判別</span>
+        </button>
+        <button class="mode-tab" id="tab-manual" onclick="setMode('manual')">
+          <span class="tab-icon">✥</span>
+          <span class="tab-label" data-i18n="modeManual">操作</span>
+        </button>
       </div>
     </div>
 
-    <!-- Fill -->
-    <div>
-      <div class="sec-label">自動フィル</div>
-      <div class="fill-section">
+    <!-- ① Fill Mode Panel -->
+    <div class="mode-panel active" id="panel-fill">
+      <div>
+        <div class="sec-label" data-i18n="palletType">パレット種別</div>
         <div class="fill-type-row">
           <button class="fill-type-btn sel-eur" id="fill-eur" onclick="setFillType('EUR')">EUR</button>
           <button class="fill-type-btn" id="fill-vmf" onclick="setFillType('VMF')">VMF</button>
+          <button class="fill-type-btn" id="fill-gma" onclick="setFillType('GMA')">GMA</button>
         </div>
-        <div id="fill-hold-banner" style="display:none;background:rgba(240,180,41,0.1);border:1px solid rgba(240,180,41,0.4);border-radius:5px;padding:7px 9px;font-size:11px;color:var(--accent);line-height:1.5;">
-          ⚠ この組み合わせは実装準備中です。コンテナ内寸の確認後に対応予定。
-        </div>
-        <button id="btn-fill" onclick="fillContainer()">▶ FILL コンテナ</button>
       </div>
+      <div id="fill-hold-banner" style="display:none;background:rgba(240,180,41,0.1);border:1px solid rgba(240,180,41,0.4);border-radius:5px;padding:7px 9px;font-size:11px;color:var(--accent);line-height:1.5;" data-i18n="fillHold">
+        ⚠ この組み合わせは実装準備中です。
+      </div>
+      <button id="btn-fill" onclick="fillContainer()" data-i18n="btnFill">▶ FILL コンテナ</button>
+      <button class="tool-btn danger" style="width:100%;margin-top:4px" onclick="clearAll()" data-i18n="btnClear">すべてクリア</button>
     </div>
 
-    <!-- Legend -->
+    <!-- ② Check Mode Panel -->
+    <div class="mode-panel" id="panel-check">
+      <div>
+        <div class="sec-label" data-i18n="checkInput">パレット枚数を入力</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:10px;height:10px;border-radius:2px;background:var(--eur-fill);flex-shrink:0;"></div>
+            <span style="font-size:12px;width:36px;color:var(--eur-fill);font-family:'JetBrains Mono',monospace;">EUR</span>
+            <input type="number" id="check-eur" min="0" value="0"
+              style="flex:1;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:5px;font-size:13px;font-family:'JetBrains Mono',monospace;outline:none;width:100%;"
+              oninput="this.value=Math.max(0,parseInt(this.value)||0)">
+            <span style="font-size:11px;color:var(--muted);" data-i18n="sheets">枚</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:10px;height:10px;border-radius:2px;background:var(--vmf-fill);flex-shrink:0;"></div>
+            <span style="font-size:12px;width:36px;color:var(--vmf-fill);font-family:'JetBrains Mono',monospace;">VMF</span>
+            <input type="number" id="check-vmf" min="0" value="0"
+              style="flex:1;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:5px;font-size:13px;font-family:'JetBrains Mono',monospace;outline:none;width:100%;"
+              oninput="this.value=Math.max(0,parseInt(this.value)||0)">
+            <span style="font-size:11px;color:var(--muted);" data-i18n="sheets">枚</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;opacity:0.5;">
+            <div style="width:10px;height:10px;border-radius:2px;background:var(--gma-fill);flex-shrink:0;"></div>
+            <span style="font-size:12px;width:36px;color:var(--gma-fill);font-family:'JetBrains Mono',monospace;">GMA</span>
+            <span style="flex:1;font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">— 未対応</span>
+          </div>
+        </div>
+      </div>
+      <button id="btn-check" onclick="runCheck()"
+        style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--vmf-fill);background:rgba(58,159,232,0.12);color:var(--vmf-fill);font-size:12px;font-family:'JetBrains Mono',monospace;font-weight:600;cursor:pointer;letter-spacing:.05em;transition:all .15s;"
+        data-i18n="btnCheck">✔ 判別する</button>
+      <!-- 詳細（枚数内訳） -->
+      <div id="check-result-detail" style="display:none;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:11px;line-height:1.8;color:var(--muted);font-family:'JetBrains Mono',monospace;white-space:pre;"></div>
+      <button class="tool-btn danger" style="width:100%;margin-top:4px" onclick="clearAll()" data-i18n="btnClear">すべてクリア</button>
+    </div>
+
+    <!-- ③ Manual Mode Panel -->
+    <div class="mode-panel" id="panel-manual">
+      <div>
+        <div class="sec-label" data-i18n="palletTypeOrient">パレット種別 &amp; 向き</div>
+        <div class="pallet-card eur" draggable="true" id="drag-eur" data-type="EUR">
+          <div class="card-title">EUR <span data-i18n="pallet">パレット</span></div>
+          <div class="card-dims">1200 × 800 mm</div>
+          <div class="orient-btn">
+            <button id="eur-h" onclick="setOrient('EUR','H')" data-i18n="eurH">H: 1200幅×800奥</button>
+            <button id="eur-v" onclick="setOrient('EUR','V')" data-i18n="eurV">V: 800幅×1200奥</button>
+          </div>
+        </div>
+        <div class="pallet-card vmf" draggable="true" id="drag-vmf" data-type="VMF" style="margin-top:8px">
+          <div class="card-title">VMF <span data-i18n="pallet">パレット</span></div>
+          <div class="card-dims">1200 × 1000 mm</div>
+          <div class="orient-btn">
+            <button id="vmf-h" onclick="setOrient('VMF','H')" data-i18n="vmfH">H: 1200幅×1000奥</button>
+            <button id="vmf-v" onclick="setOrient('VMF','V')" data-i18n="vmfV">V: 1000幅×1200奥</button>
+          </div>
+        </div>
+
+        <!-- GMA: アコーディオン折りたたみ -->
+        <div style="margin-top:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <button onclick="toggleGma()" id="gma-toggle-btn"
+            style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:var(--panel2);border:none;color:var(--gma-fill);cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;">
+            <span>GMA <span data-i18n="pallet" style="color:var(--gma-fill)">パレット</span><span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:6px;">1219 × 1016 mm</span></span>
+            <span id="gma-toggle-icon" style="font-size:10px;color:var(--muted);">▶</span>
+          </button>
+          <div id="gma-card-body" style="display:none;">
+            <div class="pallet-card gma" draggable="true" id="drag-gma" data-type="GMA"
+              style="border-radius:0;border:none;border-top:1px solid var(--border);margin-top:0;">
+              <div class="card-dims" style="margin-bottom:6px;">1219 × 1016 mm</div>
+              <div class="orient-btn">
+                <button id="gma-h" onclick="setOrient('GMA','H')" data-i18n="gmaH">H: 1219幅×1016奥</button>
+                <button id="gma-v" onclick="setOrient('GMA','V')" data-i18n="gmaV">V: 1016幅×1219奥</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="manual-hint">
+        <div class="hint-row"><span class="hint-key">Click</span><span data-i18n="hintPlace">パレットを配置</span></div>
+        <div class="hint-row" style="align-items:center;justify-content:space-between;">
+          <span class="hint-key" id="move-key-label">↑↓←→</span>
+          <span id="move-key-desc" style="font-size:10px;color:var(--muted);">選択中を移動</span>
+          <button id="move-key-toggle" onclick="toggleMoveMode()"
+            style="font-size:9px;font-family:'JetBrains Mono',monospace;background:var(--panel);border:1px solid var(--border);color:var(--muted);border-radius:3px;padding:2px 6px;cursor:pointer;" data-i18n="btnWasd">WASD切替</button>
+        </div>
+        <div class="hint-row"><span class="hint-key">Delete</span><span data-i18n="hintDelete">選択中を削除</span></div>
+        <div class="hint-row"><span class="hint-key">R</span><span data-i18n="hintRotate">選択/次のパレットを回転</span></div>
+        <div class="hint-row"><span class="hint-key">Ctrl+Z</span><span data-i18n="hintUndo">操作を取り消す</span></div>
+        <div class="hint-row"><span class="hint-key">Ctrl+Y</span><span data-i18n="hintRedo">取り消しを戻す</span></div>
+      </div>
+      <button class="tool-btn danger" style="width:100%" onclick="clearAll()" data-i18n="btnClear">すべてクリア</button>
+    </div>
+
+    <!-- 凡例 (常時表示) -->
     <div style="margin-top:auto">
-      <div class="sec-label">凡例</div>
+      <div class="sec-label" data-i18n="legend">凡例</div>
       <div style="display:flex;flex-direction:column;gap:6px">
-        <div class="legend-item"><div class="legend-dot" style="background:var(--eur-fill)"></div>EUR パレット</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--vmf-fill)"></div>VMF パレット</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--danger);opacity:.7"></div>重複 / 範囲外</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--reefer);opacity:.5"></div>ジェネレータ占有エリア</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--eur-fill)"></div><span data-i18n="legendEur">EUR パレット</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--vmf-fill)"></div><span data-i18n="legendVmf">VMF パレット</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--gma-fill)"></div><span data-i18n="legendGma">GMA パレット</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--danger);opacity:.7"></div><span data-i18n="legendOverlap">重複 / 範囲外</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--reefer);opacity:.5"></div><span data-i18n="legendGen">ジェネレータ占有エリア</span></div>
       </div>
     </div>
 
@@ -210,29 +379,61 @@
 
   <!-- Canvas Area -->
   <main id="canvas-area">
+    <div id="mode-indicator" class="fill">▦ Fill モード</div>
+    <!-- 積載可否バナー（判別モードのみ表示） -->
+    <div id="check-banner" style="display:none;padding:6px 20px;border-radius:8px;font-size:13px;font-family:'JetBrains Mono',monospace;font-weight:600;border:1px solid;white-space:pre;line-height:1.7;text-align:center;"></div>
     <div id="canvas-wrapper">
-      <div id="lbl-top">← 幅方向 →</div>
-      <div id="lbl-left">← 長さ方向 →</div>
+      <div id="lbl-top" data-i18n="lblWidth">← 幅方向 →</div>
+      <div id="lbl-left" data-i18n="lblLength">← 長さ方向 →</div>
       <div id="lbl-door">DOOR ▶</div>
       <canvas id="main-canvas"></canvas>
     </div>
-    <div id="canvas-hint">クリックでパレット配置 ／ 配置済みをクリックで選択 ／ 矢印キーで移動 ／ Deleteで削除</div>
-    <div id="toolbar">
-      <button class="tool-btn active" id="btn-snap" onclick="toggleSnap()">スナップ: ON</button>
-      <button class="tool-btn active" id="btn-grid" onclick="toggleGrid()">グリッド: ON</button>
-      <button class="tool-btn danger" onclick="clearAll()">すべてクリア</button>
+    <!-- オーバーフローキャンバス（積み残しがある場合に表示、モード跨いで維持） -->
+    <div id="overflow-wrapper" style="display:none;position:relative;margin-left:44px;margin-top:6px;">
+      <div id="overflow-title" style="font-size:10px;color:var(--danger);font-family:'JetBrains Mono',monospace;margin-bottom:4px;">↓ 積み残しパレット（操作可）</div>
+      <canvas id="overflow-canvas" style="display:block;border:1px dashed var(--danger);border-radius:2px;background:rgba(224,82,82,0.05);cursor:crosshair;"></canvas>
     </div>
+    <div id="canvas-hint" data-i18n="hintFill">EURまたはVMFを選択して FILL ボタンを押してください</div>
+    <div id="toolbar"></div>
   </main>
 
   <!-- Right Panel -->
   <aside id="right-panel">
+    <!-- コピーボタン＋注意アイコン（右上） -->
+    <div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-bottom:8px;">
+      <button class="fill-type-btn" onclick="toggleNoticePopup()" title="注意事項"
+        style="flex:none;padding:7px 14px;font-size:13px;color:var(--accent);border-color:rgba(240,180,41,0.4);font-weight:700;">!</button>
+      <button id="btn-copy-canvas" class="fill-type-btn" onclick="copyCanvasToClipboard()"
+        style="flex:none;display:flex;align-items:center;gap:6px;padding:7px 14px;font-size:12px;color:var(--accent);border-color:rgba(240,180,41,0.4);"
+        title="配置図をクリップボードにコピー">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="5" width="9" height="10" rx="1.5"/>
+          <path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v7A1.5 1.5 0 0 0 3.5 12H5"/>
+        </svg>
+        コピー
+      </button>
+    </div>
+
+    <!-- 注意事項ポップアップ -->
+    <div id="notice-popup" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;">
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:24px;max-width:480px;width:90%;position:relative;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <span style="color:var(--accent);font-size:16px;font-weight:700;">!</span>
+          <span id="notice-title" style="font-size:13px;font-weight:600;color:var(--accent);font-family:'JetBrains Mono',monospace;">注意事項</span>
+          <button onclick="toggleNoticePopup()" style="margin-left:auto;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;padding:2px 6px;">×</button>
+        </div>
+        <div id="notice-body" style="font-size:12px;color:var(--muted);line-height:1.85;font-family:'Inter',sans-serif;"></div>
+      </div>
+    </div>
+
     <div>
-      <div class="sec-label">積載統計</div>
+      <div class="sec-label" data-i18n="stats">積載統計</div>
       <div class="stat-block">
-        <div class="stat-row"><span class="stat-key">EUR 枚数</span><span class="stat-val" id="stat-eur" style="color:var(--eur-fill)">0</span></div>
-        <div class="stat-row"><span class="stat-key">VMF 枚数</span><span class="stat-val" id="stat-vmf" style="color:var(--vmf-fill)">0</span></div>
-        <div class="stat-row"><span class="stat-key">合計枚数</span><span class="stat-val" id="stat-total">0</span></div>
-        <div class="stat-row"><span class="stat-key">床面積使用率</span><span class="stat-val good" id="stat-pct">0%</span></div>
+        <div class="stat-row"><span class="stat-key" data-i18n="statEur">EUR 枚数</span><span class="stat-val" id="stat-eur" style="color:var(--eur-fill)">0</span></div>
+        <div class="stat-row"><span class="stat-key" data-i18n="statVmf">VMF 枚数</span><span class="stat-val" id="stat-vmf" style="color:var(--vmf-fill)">0</span></div>
+        <div class="stat-row"><span class="stat-key" data-i18n="statGma">GMA 枚数</span><span class="stat-val" id="stat-gma" style="color:var(--gma-fill)">0</span></div>
+        <div class="stat-row"><span class="stat-key" data-i18n="statTotal">合計枚数</span><span class="stat-val" id="stat-total">0</span></div>
+        <div class="stat-row"><span class="stat-key" data-i18n="statFloor">床面積使用率</span><span class="stat-val good" id="stat-pct">0%</span></div>
         <div class="usage-bar-wrap">
           <div class="usage-bar-track"><div class="usage-bar-fill" id="usage-bar" style="width:0%"></div></div>
           <div class="usage-label"><span id="usage-used">0 m²</span><span id="usage-total-area">- m²</span></div>
@@ -240,14 +441,265 @@
       </div>
     </div>
     <div>
-      <div class="sec-label">配置リスト</div>
+      <div class="sec-label" data-i18n="placedList">配置リスト</div>
       <div class="placed-list" id="placed-list"></div>
+    </div>
+    <!-- スナップ・グリッド（右パネル下部） -->
+    <div style="margin-top:auto;padding-top:10px;display:flex;gap:5px;">
+      <button class="tool-btn active" id="btn-snap" onclick="toggleSnap()" data-i18n="snapOn" style="flex:1;font-size:11px;">スナップ: ON</button>
+      <button class="tool-btn active" id="btn-grid" onclick="toggleGrid()" data-i18n="gridOn" style="flex:1;font-size:11px;">グリッド: ON</button>
     </div>
   </aside>
 
 </div>
 
 <script>
+// ─────────────────────────────────────────
+//  i18n — TRANSLATIONS
+// ─────────────────────────────────────────
+const TRANSLATIONS = {
+  ja: {
+    subtitle:'上面断面図 — パレット配置シミュレーター',
+    containerSelect:'コンテナ選択', c20dry:'20ft ドライコンテナ', c40dry:'40ft ドライコンテナ',
+    c20ref:'20ft リーファーコンテナ', c40ref:'40ft リーファーコンテナ',
+    dimL:'内寸 長さ (mm)', dimW:'内寸 幅 (mm)',
+    reeferNotice:'⚠ リーファー：ジェネレータ搭載により有効床面積が減少します。',
+    modeLabel:'操作モード', modeFill:'Fill', modeCheck:'判別', modeManual:'操作',
+    palletType:'パレット種別', palletTypeOrient:'パレット種別 & 向き', pallet:'パレット',
+    fillHold:'⚠ この組み合わせは実装準備中です。',
+    btnFill:'▶ FILL コンテナ', btnClear:'すべてクリア', btnWasd:'WASD切替',
+    holdTitle:'実装準備中', holdDesc:'パレットFill可能か判別する機能です。コンテナ内寸の確認後に対応予定です。',
+    checkInput:'パレット枚数を入力', sheets:'枚', btnCheck:'✔ 判別する',
+    hintCheck:'EUR・VMF枚数を入力して判別する を押してください',
+    overflowLabel:'↓ 積み残しパレット（コンテナ外）',
+    eurH:'H: 1200幅×800奥', eurV:'V: 800幅×1200奥',
+    vmfH:'H: 1200幅×1000奥', vmfV:'V: 1000幅×1200奥',
+    gmaH:'H: 1219幅×1016奥', gmaV:'V: 1016幅×1219奥',
+    hintPlace:'パレットを配置', hintDrag:'配置済みを移動', hintDelete:'選択中を削除', hintRotate:'選択/次のパレットを回転',
+    hintMoveArrow:'選択中を移動', hintMoveWasd:'選択中を移動（WASD）',
+    hintUndo:'操作を取り消す', hintRedo:'取り消しを戻す',
+    hintFill:'EURまたはVMFを選択して FILL ボタンを押してください',
+    lblWidth:'← 幅方向 →', lblLength:'← 長さ方向 →',
+    snapOn:'スナップ: ON', snapOff:'スナップ: OFF', gridOn:'グリッド: ON', gridOff:'グリッド: OFF',
+    legend:'凡例', legendEur:'EUR パレット', legendVmf:'VMF パレット', legendGma:'GMA パレット',
+    legendOverlap:'重複 / 範囲外', legendGen:'ジェネレータ占有エリア',
+    stats:'積載統計', statEur:'EUR 枚数', statVmf:'VMF 枚数', statGma:'GMA 枚数',
+    statTotal:'合計枚数', statFloor:'床面積使用率', placedList:'配置リスト',
+    noPallets:'パレットが未配置です',
+    modeIndicatorFill:'▦ Fill モード', modeIndicatorCheck:'✔ 判別モード', modeIndicatorManual:'✥ 操作モード',
+    wasdToggle:'矢印切替',
+    noticeTitle:'注意事項',
+    noticeLines:[
+      '本シミュレーターに使用しているコンテナ内寸は代表的な標準値であり、実際の寸法は船会社・コンテナメーカー・製造年次によって異なる場合があります。',
+      '本ツールは積み付けのシミュレーションを目的としたものであり、出力された配置図が実際の積み付け作業を保証・指示するものではありません。実際の積み付けにあたっては、シッパーもしくは倉庫オペレーション担当者の判断に準じます。',
+      '本シミュレーターの使用により生じた損害・損失について、当社は一切の責任を負いません。',
+    ],
+    copyImgTitle:'注意事項',
+  },
+  en: {
+    subtitle:'Top View Cross-Section — Pallet Layout Simulator',
+    containerSelect:'Container', c20dry:'20ft Dry Container', c40dry:'40ft Dry Container',
+    c20ref:'20ft Reefer Container', c40ref:'40ft Reefer Container',
+    dimL:'Int. Length (mm)', dimW:'Int. Width (mm)',
+    reeferNotice:'⚠ Reefer: Floor area reduced due to generator unit.',
+    modeLabel:'Mode', modeFill:'Fill', modeCheck:'Check', modeManual:'Manual',
+    palletType:'Pallet Type', palletTypeOrient:'Pallet Type & Orientation', pallet:'Pallet',
+    fillHold:'⚠ This combination is not yet implemented.',
+    btnFill:'▶ FILL Container', btnClear:'Clear All', btnWasd:'WASD Toggle',
+    holdTitle:'Not Implemented', holdDesc:'Fill feasibility check feature. Pending container dimension verification.',
+    checkInput:'Enter pallet count', sheets:'pcs', btnCheck:'✔ Check',
+    hintCheck:'Enter EUR & VMF counts then press Check',
+    overflowLabel:'↓ Overflow pallets (outside container)',
+    eurH:'H: 1200w×800d', eurV:'V: 800w×1200d',
+    vmfH:'H: 1200w×1000d', vmfV:'V: 1000w×1200d',
+    gmaH:'H: 1219w×1016d', gmaV:'V: 1016w×1219d',
+    hintPlace:'Place pallet', hintDrag:'Drag to move', hintDelete:'Delete selected', hintRotate:'Rotate selected / next',
+    hintMoveArrow:'Move selected', hintMoveWasd:'Move selected (WASD)',
+    hintUndo:'Undo', hintRedo:'Redo',
+    hintFill:'Select EUR, VMF or GMA then press FILL',
+    lblWidth:'← Width →', lblLength:'← Length →',
+    snapOn:'Snap: ON', snapOff:'Snap: OFF', gridOn:'Grid: ON', gridOff:'Grid: OFF',
+    legend:'Legend', legendEur:'EUR Pallet', legendVmf:'VMF Pallet', legendGma:'GMA Pallet',
+    legendOverlap:'Overlap / Out of bounds', legendGen:'Generator Area',
+    stats:'Load Statistics', statEur:'EUR Count', statVmf:'VMF Count', statGma:'GMA Count',
+    statTotal:'Total', statFloor:'Floor Usage', placedList:'Placed Pallets',
+    noPallets:'No pallets placed',
+    modeIndicatorFill:'▦ Fill Mode', modeIndicatorCheck:'✔ Check Mode', modeIndicatorManual:'✥ Manual Mode',
+    wasdToggle:'Arrow Toggle',
+    noticeTitle:'Notice',
+    noticeLines:[
+      'Container internal dimensions used in this simulator are representative standard values. Actual dimensions may vary depending on the shipping company, container manufacturer, and year of production.',
+      'This tool is intended for container load calculation (CLC) simulation purposes only. The layout shown does not guarantee or instruct actual stowage operations. Actual stowage shall be carried out at the discretion of the shipper or warehouse operations staff.',
+      'The developer assumes no responsibility for any damage or loss arising from the use of this simulator.',
+    ],
+    copyImgTitle:'Notice',
+  },
+  fr: {
+    subtitle:'Vue de dessus — Simulateur de chargement de palettes',
+    containerSelect:'Conteneur', c20dry:'20ft Conteneur Sec', c40dry:'40ft Conteneur Sec',
+    c20ref:'20ft Conteneur Frigo', c40ref:'40ft Conteneur Frigo',
+    dimL:'Long. intérieure (mm)', dimW:'Larg. intérieure (mm)',
+    reeferNotice:'⚠ Frigo : Surface réduite en raison du groupe frigorifique.',
+    modeLabel:'Mode', modeFill:'Remplir', modeCheck:'Vérifier', modeManual:'Manuel',
+    palletType:'Type de palette', palletTypeOrient:'Type & Orientation', pallet:'Palette',
+    fillHold:'⚠ Cette combinaison n\'est pas encore disponible.',
+    btnFill:'▶ REMPLIR Conteneur', btnClear:'Tout effacer', btnWasd:'Basculer WASD',
+    holdTitle:'Non implémenté', holdDesc:'Fonction de vérification en attente de confirmation des dimensions.',
+    checkInput:'Entrez le nombre de palettes', sheets:'pcs', btnCheck:'✔ Vérifier',
+    hintCheck:'Entrez les quantités EUR & VMF puis appuyez sur Vérifier',
+    overflowLabel:'↓ Palettes en surplus (hors conteneur)',
+    eurH:'H: 1200l×800p', eurV:'V: 800l×1200p',
+    vmfH:'H: 1200l×1000p', vmfV:'V: 1000l×1200p',
+    gmaH:'H: 1219l×1016p', gmaV:'V: 1016l×1219p',
+    hintPlace:'Placer une palette', hintDrag:'Glisser pour déplacer', hintDelete:'Supprimer la sélection', hintRotate:'Pivoter sélection / suivante',
+    hintMoveArrow:'Déplacer la sélection', hintMoveWasd:'Déplacer (WASD)',
+    hintUndo:'Annuler', hintRedo:'Rétablir',
+    hintFill:'Sélectionnez EUR, VMF ou GMA puis appuyez sur REMPLIR',
+    lblWidth:'← Largeur →', lblLength:'← Longueur →',
+    snapOn:'Aimant: ON', snapOff:'Aimant: OFF', gridOn:'Grille: ON', gridOff:'Grille: OFF',
+    legend:'Légende', legendEur:'Palette EUR', legendVmf:'Palette VMF', legendGma:'Palette GMA',
+    legendOverlap:'Chevauchement / Hors limites', legendGen:'Zone groupe frigo',
+    stats:'Statistiques', statEur:'Qté EUR', statVmf:'Qté VMF', statGma:'Qté GMA',
+    statTotal:'Total', statFloor:'Utilisation sol', placedList:'Palettes placées',
+    noPallets:'Aucune palette placée',
+    modeIndicatorFill:'▦ Mode Remplissage', modeIndicatorCheck:'✔ Mode Vérification', modeIndicatorManual:'✥ Mode Manuel',
+    wasdToggle:'Basculer flèches',
+    noticeTitle:'Avertissement',
+    noticeLines:[
+      'Les dimensions intérieures des conteneurs utilisées dans ce simulateur sont des valeurs standard représentatives. Les dimensions réelles peuvent varier selon la compagnie maritime, le fabricant et l\'année de production.',
+      'Cet outil est destiné uniquement à la simulation de calcul de chargement de conteneurs (CLC). Le plan de chargement affiché ne garantit pas et n\'instruit pas les opérations réelles d\'arrimage. L\'arrimage effectif relève du jugement de l\'expéditeur ou du responsable des opérations en entrepôt.',
+      'Le développeur décline toute responsabilité pour tout dommage ou perte résultant de l\'utilisation de ce simulateur.',
+    ],
+    copyImgTitle:'Avertissement',
+  },
+  es: {
+    subtitle:'Vista superior — Simulador de carga de palés',
+    containerSelect:'Contenedor', c20dry:'Contenedor Seco 20ft', c40dry:'Contenedor Seco 40ft',
+    c20ref:'Contenedor Reefer 20ft', c40ref:'Contenedor Reefer 40ft',
+    dimL:'Long. interior (mm)', dimW:'Ancho interior (mm)',
+    reeferNotice:'⚠ Reefer: Área reducida por el grupo frigorífico.',
+    modeLabel:'Modo', modeFill:'Llenar', modeCheck:'Verificar', modeManual:'Manual',
+    palletType:'Tipo de palé', palletTypeOrient:'Tipo & Orientación', pallet:'Palé',
+    fillHold:'⚠ Esta combinación aún no está disponible.',
+    btnFill:'▶ LLENAR Contenedor', btnClear:'Borrar todo', btnWasd:'Cambiar WASD',
+    holdTitle:'No implementado', holdDesc:'Función de verificación pendiente de confirmación de dimensiones.',
+    checkInput:'Ingrese cantidad de palés', sheets:'uds', btnCheck:'✔ Verificar',
+    hintCheck:'Ingrese cantidades EUR & VMF y presione Verificar',
+    overflowLabel:'↓ Palés en exceso (fuera del contenedor)',
+    eurH:'H: 1200an×800pr', eurV:'V: 800an×1200pr',
+    vmfH:'H: 1200an×1000pr', vmfV:'V: 1000an×1200pr',
+    gmaH:'H: 1219an×1016pr', gmaV:'V: 1016an×1219pr',
+    hintPlace:'Colocar palé', hintDrag:'Arrastrar para mover', hintDelete:'Eliminar selección', hintRotate:'Rotar seleccionado / siguiente',
+    hintMoveArrow:'Mover selección', hintMoveWasd:'Mover (WASD)',
+    hintUndo:'Deshacer', hintRedo:'Rehacer',
+    hintFill:'Seleccione EUR, VMF o GMA y presione LLENAR',
+    lblWidth:'← Ancho →', lblLength:'← Longitud →',
+    snapOn:'Imán: ON', snapOff:'Imán: OFF', gridOn:'Cuadrícula: ON', gridOff:'Cuadrícula: OFF',
+    legend:'Leyenda', legendEur:'Palé EUR', legendVmf:'Palé VMF', legendGma:'Palé GMA',
+    legendOverlap:'Solapamiento / Fuera de límites', legendGen:'Zona grupo frigorífico',
+    stats:'Estadísticas de carga', statEur:'Cant. EUR', statVmf:'Cant. VMF', statGma:'Cant. GMA',
+    statTotal:'Total', statFloor:'Uso del suelo', placedList:'Palés colocados',
+    noPallets:'No hay palés colocados',
+    modeIndicatorFill:'▦ Modo Llenado', modeIndicatorCheck:'✔ Modo Verificación', modeIndicatorManual:'✥ Modo Manual',
+    wasdToggle:'Cambiar flechas',
+    noticeTitle:'Aviso',
+    noticeLines:[
+      'Las dimensiones interiores de los contenedores utilizadas en este simulador son valores estándar representativos. Las dimensiones reales pueden variar según la naviera, el fabricante del contenedor y el año de producción.',
+      'Esta herramienta está destinada únicamente a la simulación del cálculo de carga de contenedores (CLC). El plan de carga mostrado no garantiza ni instruye las operaciones reales de estiba. La estiba real queda a criterio del expedidor o del responsable de operaciones de almacén.',
+      'El desarrollador no asume ninguna responsabilidad por daños o pérdidas derivados del uso de este simulador.',
+    ],
+    copyImgTitle:'Aviso',
+  },
+  it: {
+    subtitle:'Vista dall\'alto — Simulatore di carico pallet',
+    containerSelect:'Container', c20dry:'Container Secco 20ft', c40dry:'Container Secco 40ft',
+    c20ref:'Container Frigo 20ft', c40ref:'Container Frigo 40ft',
+    dimL:'Lung. interna (mm)', dimW:'Larg. interna (mm)',
+    reeferNotice:'⚠ Frigo: Area ridotta per la presenza del gruppo frigorifero.',
+    modeLabel:'Modalità', modeFill:'Riempi', modeCheck:'Verifica', modeManual:'Manuale',
+    palletType:'Tipo di pallet', palletTypeOrient:'Tipo & Orientamento', pallet:'Pallet',
+    fillHold:'⚠ Questa combinazione non è ancora disponibile.',
+    btnFill:'▶ RIEMPI Container', btnClear:'Cancella tutto', btnWasd:'Cambia WASD',
+    holdTitle:'Non implementato', holdDesc:'Funzione di verifica in attesa di conferma delle dimensioni.',
+    checkInput:'Inserisci il numero di pallet', sheets:'pz', btnCheck:'✔ Verifica',
+    hintCheck:'Inserisci le quantità EUR & VMF e premi Verifica',
+    overflowLabel:'↓ Pallet in eccesso (fuori dal container)',
+    eurH:'H: 1200l×800p', eurV:'V: 800l×1200p',
+    vmfH:'H: 1200l×1000p', vmfV:'V: 1000l×1200p',
+    gmaH:'H: 1219l×1016p', gmaV:'V: 1016l×1219p',
+    hintPlace:'Posiziona pallet', hintDrag:'Trascina per spostare', hintDelete:'Elimina selezionato', hintRotate:'Ruota selezionato / prossimo',
+    hintMoveArrow:'Sposta selezionato', hintMoveWasd:'Sposta (WASD)',
+    hintUndo:'Annulla', hintRedo:'Ripristina',
+    hintFill:'Seleziona EUR, VMF o GMA poi premi RIEMPI',
+    lblWidth:'← Larghezza →', lblLength:'← Lunghezza →',
+    snapOn:'Snap: ON', snapOff:'Snap: OFF', gridOn:'Griglia: ON', gridOff:'Griglia: OFF',
+    legend:'Legenda', legendEur:'Pallet EUR', legendVmf:'Pallet VMF', legendGma:'Pallet GMA',
+    legendOverlap:'Sovrapposizione / Fuori limite', legendGen:'Zona gruppo frigorifero',
+    stats:'Statistiche di carico', statEur:'N. EUR', statVmf:'N. VMF', statGma:'N. GMA',
+    statTotal:'Totale', statFloor:'Utilizzo pavimento', placedList:'Pallet posizionati',
+    noPallets:'Nessun pallet posizionato',
+    modeIndicatorFill:'▦ Modalità Riempimento', modeIndicatorCheck:'✔ Modalità Verifica', modeIndicatorManual:'✥ Modalità Manuale',
+    wasdToggle:'Cambia frecce',
+    noticeTitle:'Avviso',
+    noticeLines:[
+      'Le dimensioni interne dei container utilizzate in questo simulatore sono valori standard rappresentativi. Le dimensioni reali possono variare a seconda della compagnia di navigazione, del produttore del container e dell\'anno di produzione.',
+      'Questo strumento è destinato esclusivamente alla simulazione del calcolo di carico dei container (CLC). Il piano di carico visualizzato non garantisce né istruisce le operazioni di stivaggio reali. Lo stivaggio effettivo è a discrezione dello spedizioniere o del responsabile delle operazioni di magazzino.',
+      'Lo sviluppatore non si assume alcuna responsabilità per danni o perdite derivanti dall\'utilizzo di questo simulatore.',
+    ],
+    copyImgTitle:'Avviso',
+  },
+};
+
+let currentLang = 'ja';
+
+function setLang(lang) {
+  currentLang = lang;
+  const T = TRANSLATIONS[lang];
+
+  // data-i18n属性を持つ全要素を更新
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (T[key] !== undefined) el.textContent = T[key];
+  });
+
+  // <select> の <option> を更新（data-i18n属性付き）
+  document.querySelectorAll('option[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (T[key] !== undefined) el.textContent = T[key];
+  });
+
+  // スナップ・グリッドボタンは ON/OFF 状態を反映
+  const snapBtn = document.getElementById('btn-snap');
+  const gridBtn = document.getElementById('btn-grid');
+  if (snapBtn) snapBtn.textContent = snapEnabled ? T.snapOn : T.snapOff;
+  if (gridBtn) gridBtn.textContent = gridEnabled ? T.gridOn : T.gridOff;
+
+  // モードインジケーターを更新
+  const ind = document.getElementById('mode-indicator');
+  if (ind) {
+    const indMap = { fill: T.modeIndicatorFill, check: T.modeIndicatorCheck, manual: T.modeIndicatorManual };
+    ind.textContent = indMap[currentMode] || ind.textContent;
+  }
+
+  // キャンバスヒントを更新（現在のモードに応じて）
+  const MODE_HINTS = { fill: T.hintFill, check: '— ' + T.holdTitle + ' —', manual: T.hintPlace + ' / ' + T.hintDrag };
+  document.getElementById('canvas-hint').textContent = MODE_HINTS[currentMode] || T.hintFill;
+
+  // 未配置テキストを更新
+  const list = document.getElementById('placed-list');
+  if (list && list.children.length === 1 && !placedPallets.length) {
+    list.innerHTML = `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px">${T.noPallets}</div>`;
+  }
+
+  // WASD切替ボタン
+  const wasdBtn = document.getElementById('move-key-toggle');
+  if (wasdBtn) wasdBtn.textContent = moveMode === 'wasd' ? T.wasdToggle : T.btnWasd;
+}
+
+function t(key) {
+  return TRANSLATIONS[currentLang][key] || TRANSLATIONS['ja'][key] || key;
+}
+
 // ─────────────────────────────────────────
 //  CONTAINER DEFINITIONS
 // ─────────────────────────────────────────
@@ -294,6 +746,7 @@ const CONTAINERS = {
 const PALLETS = {
   EUR: { long: 1200, short: 800,  color: '#2ECC71', dark: '#1A7A44' },
   VMF: { long: 1200, short: 1000, color: '#3A9FE8', dark: '#1A5A8A' },
+  GMA: { long: 1219, short: 1016, color: '#E8B84B', dark: '#8A6A1A' },
 };
 
 // getPalletDims: orient 'H' = landscape (long along width), 'V' = portrait (short along width)
@@ -308,20 +761,69 @@ function getPalletDims(type, orient) {
 // ─────────────────────────────────────────
 //  STATE
 // ─────────────────────────────────────────
-let containerType  = '40dry';
+let containerType    = '20dry';
 let activePalletType = 'EUR';
-let fillType       = 'EUR';
-let orientations   = { EUR: 'H', VMF: 'H' };
-let placedPallets  = [];
-let selectedIdx    = -1;
-let snapEnabled    = true;
-let gridEnabled    = true;
-let dragType       = null;
-let idCounter      = 0;
-let scale          = 1;  // px per mm
+let fillType         = 'EUR';
+let orientations     = { EUR: 'H', VMF: 'H', GMA: 'H' };
+let placedPallets    = [];
+let selectedIdx      = -1;
+let snapEnabled      = true;
+let gridEnabled      = true;
+let dragType         = null;
+let idCounter        = 0;
+let scale            = 1;
+let currentMode      = 'fill';
+let moveMode         = 'arrow'; // 'arrow' | 'wasd'
+
+// 判別モード用
+let overflowPallets  = [];   // コンテナ外のオーバーフローパレット
+let overflowSelectedIdx = -1;
+let overflowScale    = 1;
+const ovCanvas = () => document.getElementById('overflow-canvas');
+const ovCtx    = () => { const c = ovCanvas(); return c ? c.getContext('2d') : null; };
+
+// undo/redo 履歴（placedPalletsのスナップショット配列）
+let history          = [];   // 過去の状態スタック
+let future           = [];   // redo用スタック
+const MAX_HISTORY    = 50;
+
+// ホバープレビュー
+let hoverPos         = null;
+let isOverCanvas     = false;
+
+// 配置済みパレットのドラッグ移動
+let draggingIdx      = -1;
+let dragOffsetX      = 0;
+let dragOffsetY      = 0;
 
 const canvas = document.getElementById('main-canvas');
 const ctx    = canvas.getContext('2d');
+
+// ─────────────────────────────────────────
+//  HISTORY HELPERS
+// ─────────────────────────────────────────
+// 操作確定時に呼ぶ（スナップショットを履歴に積む）
+function pushHistory() {
+  history.push(JSON.stringify(placedPallets));
+  if (history.length > MAX_HISTORY) history.shift();
+  future = []; // 新操作でredoスタックをクリア
+}
+
+function undo() {
+  if (history.length === 0) return;
+  future.push(JSON.stringify(placedPallets));
+  placedPallets = JSON.parse(history.pop());
+  selectedIdx = -1;
+  render(); updateStats();
+}
+
+function redo() {
+  if (future.length === 0) return;
+  history.push(JSON.stringify(placedPallets));
+  placedPallets = JSON.parse(future.pop());
+  selectedIdx = -1;
+  render(); updateStats();
+}
 
 // ─────────────────────────────────────────
 //  HELPERS
@@ -377,20 +879,11 @@ function render() {
   // Reefer generator area (front = left side = x=0 in canvas = far from door)
   if (c.isReefer && c.reeferOffset > 0) {
     const rw = c.reeferOffset * scale;
-    // Hatched fill
-    ctx.fillStyle = 'rgba(232,115,74,0.10)';
+    // Solid fill only (no hatch lines)
+    ctx.fillStyle = 'rgba(232,115,74,0.18)';
     ctx.fillRect(0, 0, rw, canvas.height);
-    // Hatch lines
-    ctx.strokeStyle = 'rgba(232,115,74,0.25)';
-    ctx.lineWidth = 1;
-    for (let i = -canvas.height; i < rw + canvas.height; i += 10) {
-      ctx.beginPath();
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i + canvas.height, canvas.height);
-      ctx.stroke();
-    }
     // Border line
-    ctx.strokeStyle = 'rgba(232,115,74,0.6)';
+    ctx.strokeStyle = 'rgba(232,115,74,0.7)';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([5, 3]);
     ctx.beginPath();
@@ -398,7 +891,7 @@ function render() {
     ctx.stroke();
     ctx.setLineDash([]);
     // Label
-    ctx.fillStyle = 'rgba(232,115,74,0.7)';
+    ctx.fillStyle = 'rgba(232,115,74,0.8)';
     ctx.font = `600 ${Math.max(7, scale * 80)}px JetBrains Mono, monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -471,6 +964,14 @@ function render() {
     ctx.fillStyle = bad ? 'rgba(255,136,136,0.7)' : hexToRgba(pal.color, 0.7);
     ctx.fillText(`${p.d}×${p.w}`, px + pd_px/2, py + pw_px/2 + fs * 0.55);
 
+    // 番号（左上に薄く表示）
+    const numFs = Math.max(6, Math.min(pd_px, pw_px) * 0.13);
+    ctx.font = `600 ${numFs}px JetBrains Mono, monospace`;
+    ctx.fillStyle = bad ? 'rgba(255,136,136,0.5)' : hexToRgba(pal.color, 0.45);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`#${String(p.id).padStart(2,'0')}`, px + 3, py + 2);
+
     if (isSel) {
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 1.5;
@@ -517,6 +1018,28 @@ function render() {
     ctx.fillStyle = hingeColor;
     ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI*2); ctx.fill();
   });
+
+  // ── Hover preview (new pallet ghost) ──
+  // 操作モードのみ表示、ドラッグ移動中・サイドバードラッグ中は非表示
+  if (currentMode === 'manual' && isOverCanvas && hoverPos && draggingIdx === -1 && !dragType) {
+    const orient = orientations[activePalletType];
+    const { w, d } = getPalletDims(activePalletType, orient);
+    const hx = Math.min(Math.max(0, snapTo(hoverPos.mmX - d/2, 100)), c.L - d);
+    const hy = Math.min(Math.max(0, snapTo(hoverPos.mmY - w/2, 100)), c.W - w);
+    const ghost = { x: hx, y: hy, w, d };
+    const hasOverlap = placedPallets.some(p => rectsOverlap(ghost, p));
+    const outOfBounds = hx < 0 || hy < 0 || (hx + d) > c.L || (hy + w) > c.W;
+    const bad = hasOverlap || outOfBounds;
+    const pal = PALLETS[activePalletType];
+
+    ctx.fillStyle   = bad ? 'rgba(224,82,82,0.30)' : hexToRgba(pal.color, 0.25);
+    ctx.strokeStyle = bad ? '#E05252' : pal.color;
+    ctx.lineWidth   = 1.5;
+    ctx.setLineDash([5, 3]);
+    ctx.fillRect(hx * scale, hy * scale, d * scale, w * scale);
+    ctx.strokeRect(hx * scale, hy * scale, d * scale, w * scale);
+    ctx.setLineDash([]);
+  }
 }
 
 // ─────────────────────────────────────────
@@ -541,6 +1064,12 @@ const FILL_PATTERNS = {
       { y:'bottom', w: 1200, d: 1000, count: 2 },
       { y:'bottom', w: 1000, d: 1200, count: 3 },
     ],
+    GMA: [
+      { y:'top',    w: 1016, d: 1219, count: 2 },
+      { y:'top',    w: 1219, d: 1016, count: 3 },
+      { y:'bottom', w: 1219, d: 1016, count: 2 },
+      { y:'bottom', w: 1016, d: 1219, count: 3 },
+    ],
   },
   '40dry': {
     EUR: [
@@ -555,6 +1084,12 @@ const FILL_PATTERNS = {
       { y:'bottom', w: 1200, d: 1000, count: 9 },
       { y:'bottom', w: 1000, d: 1200, count: 2 },
     ],
+    GMA: [
+      { y:'top',    w: 1016, d: 1219, count: 8 },
+      { y:'top',    w: 1219, d: 1016, count: 2 },
+      { y:'bottom', w: 1219, d: 1016, count: 9 },
+      { y:'bottom', w: 1016, d: 1219, count: 2 },
+    ],
   },
   '20ref': {
     EUR: [
@@ -562,6 +1097,7 @@ const FILL_PATTERNS = {
       { y:'bottom', w: 1200, d: 800,  count: 6 },
     ],
     VMF: 'hold',
+    GMA: 'hold',
   },
   '40ref': {
     EUR: 'hold',
@@ -569,6 +1105,7 @@ const FILL_PATTERNS = {
       { y:'top',    w: 1000, d: 1200, count: 9  },
       { y:'bottom', w: 1200, d: 1000, count: 11 },
     ],
+    GMA: 'hold',
   },
 };
 
@@ -577,6 +1114,269 @@ function isHold(cType, pType) {
   const p = FILL_PATTERNS[cType];
   return !p || p[pType] === 'hold';
 }
+
+// ─────────────────────────────────────────
+//  CHECK MODE ALGORITHM
+// ─────────────────────────────────────────
+
+// グリーディー混載配置アルゴリズム（シェルフパッキング方式）
+// ─────────────────────────────────────────
+// コンテナ幅方向（Y軸）に「棚」を積み上げる。
+// 各棚はある高さ（幅方向サイズ）を持ち、長さ方向にパレットを詰める。
+// 棚の残り長さに別タイプを詰めることで余りスペースを最大活用する。
+// 返り値: { placed: [...], overflow: [...], eurOver, vmfOver }
+function greedyPack(eurNeeded, vmfNeeded) {
+  const c      = getC();
+  const startX = loadableStartX();
+  const availL = c.L - startX;
+  const W      = c.W;
+  const EUR    = PALLETS['EUR'];
+  const VMF    = PALLETS['VMF'];
+
+  // 残り枚数（ミュータブルなカウンター）
+  let eurLeft = eurNeeded;
+  let vmfLeft = vmfNeeded;
+
+  const placed = [];
+  let palId = 1;
+  let currentY = 0;  // 現在の棚のY開始位置
+
+  // 棚を1つ作る：primaryタイプを先に詰め、余りにsecondaryを詰める
+  // 両向き（H/V）を試して多い方を採用
+  function buildShelf(primaryType, primaryLeft, secondaryType, secondaryLeft, shelfY) {
+    const primP = PALLETS[primaryType];
+    const secP  = PALLETS[secondaryType];
+    const shelfPallets = [];
+
+    // primary の向き選択（幅に収まりかつ長さ方向に最も多く詰まる）
+    let primDim = null;
+    const cands = [
+      { w: primP.long, d: primP.short, orient: 'H' },
+      { w: primP.short, d: primP.long,  orient: 'V' },
+    ];
+    let bestCount = 0;
+    for (const cand of cands) {
+      if (shelfY + cand.w > W) continue; // 幅オーバー
+      const cnt = Math.floor(availL / cand.d);
+      if (cnt > bestCount) { bestCount = cnt; primDim = cand; }
+    }
+    if (!primDim || bestCount === 0 || primaryLeft === 0) return null;
+
+    const shelfH = primDim.w; // この棚の高さ（幅方向）
+
+    // primary を詰める
+    let x = startX;
+    const primCount = Math.min(primaryLeft, Math.floor(availL / primDim.d));
+    for (let i = 0; i < primCount; i++) {
+      shelfPallets.push({ type: primaryType, orient: primDim.orient,
+        x, y: shelfY, w: primDim.w, d: primDim.d });
+      x += primDim.d;
+    }
+
+    // 余りスペースに secondary を詰める
+    const remaining = startX + availL - x;
+    if (remaining > 0 && secondaryLeft > 0) {
+      // secondary の向き選択（棚高さに収まるもの）
+      const secCands = [
+        { w: secP.long,  d: secP.short, orient: 'H' },
+        { w: secP.short, d: secP.long,  orient: 'V' },
+      ];
+      for (const sc of secCands) {
+        if (sc.w > shelfH) continue;       // 棚高さを超える
+        if (shelfY + sc.w > W) continue;   // コンテナ幅オーバー
+        if (remaining < sc.d) continue;    // スペースなし
+        const secCount = Math.min(secondaryLeft, Math.floor(remaining / sc.d));
+        for (let i = 0; i < secCount; i++) {
+          shelfPallets.push({ type: secondaryType, orient: sc.orient,
+            x, y: shelfY, w: sc.w, d: sc.d });
+          x += sc.d;
+        }
+        break; // 1向きで試みたらOK
+      }
+    }
+
+    return { pallets: shelfPallets, shelfH, primCount,
+             secCount: shelfPallets.filter(p => p.type === secondaryType).length };
+  }
+
+  // 棚を積み上げる（残りスペースがある限り）
+  while (currentY < W && (eurLeft > 0 || vmfLeft > 0)) {
+    const remainH = W - currentY;
+
+    // primary候補の最小幅チェック
+    const eurCanFit = eurLeft > 0 && (remainH >= EUR.long || remainH >= EUR.short);
+    const vmfCanFit = vmfLeft > 0 && (remainH >= VMF.long || remainH >= VMF.short);
+    if (!eurCanFit && !vmfCanFit) break;
+
+    // どちらをprimaryにするか：残り枚数が多い方を先に、同数なら面積が大きい方
+    let primaryType, secondaryType;
+    if (!eurCanFit) { primaryType = 'VMF'; secondaryType = 'EUR'; }
+    else if (!vmfCanFit) { primaryType = 'EUR'; secondaryType = 'VMF'; }
+    else {
+      // 両方入る → 残り枚数が多い方をprimary
+      primaryType   = eurLeft >= vmfLeft ? 'EUR' : 'VMF';
+      secondaryType = primaryType === 'EUR' ? 'VMF' : 'EUR';
+    }
+
+    const primLeft = primaryType === 'EUR' ? eurLeft : vmfLeft;
+    const secLeft  = secondaryType === 'EUR' ? eurLeft : vmfLeft;
+
+    const shelf = buildShelf(primaryType, primLeft, secondaryType, secLeft, currentY);
+    if (!shelf || shelf.pallets.length === 0) break;
+
+    // 棚に追加
+    shelf.pallets.forEach(p => placed.push({ ...p, id: palId++ }));
+
+    // カウント更新
+    eurLeft -= shelf.pallets.filter(p => p.type === 'EUR').length;
+    vmfLeft -= shelf.pallets.filter(p => p.type === 'VMF').length;
+
+    currentY += shelf.shelfH;
+  }
+
+  // オーバー分を計算
+  const eurOver = Math.max(0, eurLeft);
+  const vmfOver = Math.max(0, vmfLeft);
+
+  // オーバーフロー描画用レイアウト（小さい枚数のタイプを先に表示）
+  const overflowPals = [];
+  const ovTypes = eurOver <= vmfOver
+    ? [['EUR', eurOver], ['VMF', vmfOver]]
+    : [['VMF', vmfOver], ['EUR', eurOver]];
+
+  let ovY = 0;
+  for (const [type, count] of ovTypes) {
+    if (count === 0) continue;
+    const P = PALLETS[type];
+    const dim = { w: P.long, d: P.short };
+    for (let i = 0; i < count; i++) {
+      overflowPals.push({ id: palId++, type, orient: 'H',
+        x: i * (dim.d + 10), y: ovY, w: dim.w, d: dim.d });
+    }
+    ovY += dim.w + 20;
+  }
+
+  return { placed, overflow: overflowPals, eurOver, vmfOver };
+}
+
+function runCheck() {
+  const eurN = Math.max(0, parseInt(document.getElementById('check-eur').value) || 0);
+  const vmfN = Math.max(0, parseInt(document.getElementById('check-vmf').value) || 0);
+
+  if (eurN === 0 && vmfN === 0) return;
+
+  // 判別実行
+  const result = greedyPack(eurN, vmfN);
+  placedPallets   = result.placed;
+  overflowPallets = result.overflow;
+  selectedIdx     = -1;
+  overflowSelectedIdx = -1;
+  idCounter = placedPallets.length + overflowPallets.length;
+
+  const eurPlaced = placedPallets.filter(p=>p.type==='EUR').length;
+  const vmfPlaced = placedPallets.filter(p=>p.type==='VMF').length;
+  const eurOver   = result.eurOver || 0;
+  const vmfOver   = result.vmfOver || 0;
+  const isOk      = eurOver === 0 && vmfOver === 0;
+
+  // ── バナー（コンテナ描画エリア上部）──
+  const banner = document.getElementById('check-banner');
+  if (isOk) {
+    banner.style.cssText = 'display:block;padding:6px 20px;border-radius:8px;font-size:13px;font-family:JetBrains Mono,monospace;font-weight:600;border:1px solid var(--eur-fill);background:rgba(46,204,113,0.12);color:var(--eur-fill);white-space:pre;line-height:1.7;text-align:center;';
+    banner.textContent = `✓ 積載可能　EUR ${eurPlaced}枚　VMF ${vmfPlaced}枚`;
+  } else {
+    const overText = [];
+    if (eurOver > 0) overText.push(`EUR ${eurOver}枚オーバー`);
+    if (vmfOver > 0) overText.push(`VMF ${vmfOver}枚オーバー`);
+    banner.style.cssText = 'display:block;padding:6px 20px;border-radius:8px;font-size:13px;font-family:JetBrains Mono,monospace;font-weight:600;border:1px solid var(--danger);background:rgba(224,82,82,0.12);color:var(--danger);white-space:pre;line-height:1.7;text-align:center;';
+    banner.textContent = `✗ 積載不可　${overText.join(' / ')}\nEUR ${eurPlaced}/${eurN}枚　VMF ${vmfPlaced}/${vmfN}枚`;
+  }
+
+  // ── 詳細（左パネル）──
+  const detail = document.getElementById('check-result-detail');
+  let detailText = `EUR: ${eurPlaced}/${eurN} 枚積載`;
+  if (eurOver > 0) detailText += ` (+${eurOver}枚オーバー)`;
+  detailText += `\nVMF: ${vmfPlaced}/${vmfN} 枚積載`;
+  if (vmfOver > 0) detailText += ` (+${vmfOver}枚オーバー)`;
+  detail.style.display = 'block';
+  detail.textContent = detailText;
+
+  // オーバーフローキャンバス表示
+  const ovWrap = document.getElementById('overflow-wrapper');
+  if (overflowPallets.length > 0) {
+    ovWrap.style.display = 'block';
+    renderOverflow();
+  } else {
+    ovWrap.style.display = 'none';
+  }
+
+  render();
+  updateStats();
+}
+
+// オーバーフローキャンバス描画
+function renderOverflow() {
+  const oc = ovCanvas();
+  const octx = ovCtx();
+  if (!oc || !octx || overflowPallets.length === 0) return;
+
+  // サイズ計算
+  const padding = 10;
+  let maxX = 0, maxY = 0;
+  overflowPallets.forEach(p => {
+    maxX = Math.max(maxX, p.x + p.d);
+    maxY = Math.max(maxY, p.y + p.w);
+  });
+  const area = document.getElementById('canvas-area');
+  const availW = area.clientWidth - 110;
+  overflowScale = Math.min(availW / (maxX + padding * 2), canvas.height / (maxY + padding * 2), scale, 0.08);
+  oc.width  = Math.round((maxX + padding * 2) * overflowScale);
+  oc.height = Math.round((maxY + padding * 2) * overflowScale);
+
+  octx.clearRect(0, 0, oc.width, oc.height);
+  octx.fillStyle = 'rgba(224,82,82,0.05)';
+  octx.fillRect(0, 0, oc.width, oc.height);
+
+  overflowPallets.forEach((p, i) => {
+    const px = (p.x + padding) * overflowScale;
+    const py = (p.y + padding) * overflowScale;
+    const pd_px = p.d * overflowScale;
+    const pw_px = p.w * overflowScale;
+    const pal = PALLETS[p.type];
+    const isSel = i === overflowSelectedIdx;
+
+    octx.fillStyle = hexToRgba(pal.color, 0.35);
+    octx.fillRect(px, py, pd_px, pw_px);
+    octx.strokeStyle = isSel ? '#fff' : pal.color;
+    octx.lineWidth = isSel ? 1.8 : 0.8;
+    octx.strokeRect(px, py, pd_px, pw_px);
+
+    const fs = Math.max(7, Math.min(pd_px, pw_px) * 0.17);
+    octx.fillStyle = pal.color;
+    octx.font = `600 ${fs}px JetBrains Mono, monospace`;
+    octx.textAlign = 'center';
+    octx.textBaseline = 'middle';
+    octx.fillText(p.type, px + pd_px/2, py + pw_px/2);
+    const numFs = Math.max(6, Math.min(pd_px, pw_px) * 0.13);
+    octx.font = `600 ${numFs}px JetBrains Mono, monospace`;
+    octx.fillStyle = hexToRgba(pal.color, 0.45);
+    octx.textAlign = 'left';
+    octx.textBaseline = 'top';
+    octx.fillText(`#${String(p.id).padStart(2,'0')}`, px + 3, py + 2);
+
+    if (isSel) {
+      octx.strokeStyle = '#fff';
+      octx.lineWidth = 1.5;
+      octx.setLineDash([4,3]);
+      octx.strokeRect(px-2, py-2, pd_px+4, pw_px+4);
+      octx.setLineDash([]);
+    }
+  });
+}
+
+// ─────────────────────────────────────────
+//  HOLD BANNER
+// ─────────────────────────────────────────
 
 // holdバナーの表示・非表示
 function updateHoldBanner() {
@@ -599,8 +1399,10 @@ function updateHoldBanner() {
 function fillContainer() {
   if (isHold(containerType, fillType)) return;
 
+  pushHistory();
   placedPallets = [];
   selectedIdx   = -1;
+  idCounter     = 0;  // リスト番号をリセット
   const c       = getC();
   const rows    = FILL_PATTERNS[containerType][fillType];
   const startX  = loadableStartX();
@@ -631,47 +1433,210 @@ function fillContainer() {
 // ─────────────────────────────────────────
 //  CANVAS EVENTS
 // ─────────────────────────────────────────
-canvas.addEventListener('click', e => {
-  const rect = canvas.getBoundingClientRect();
-  const mmX  = (e.clientX - rect.left) / scale;  // along LENGTH (X)
-  const mmY  = (e.clientY - rect.top)  / scale;  // along WIDTH  (Y)
 
-  // Hit test: p.x/p.d = length axis, p.y/p.w = width axis
+// マウス座標 → mm変換
+function canvasMmPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    mmX: (e.clientX - rect.left)  / scale,
+    mmY: (e.clientY - rect.top)   / scale,
+  };
+}
+
+// mousemove: ホバープレビュー更新 & 配置済みパレットのドラッグ移動
+canvas.addEventListener('mousemove', e => {
+  const { mmX, mmY } = canvasMmPos(e);
+  hoverPos = { mmX, mmY };
+
+  if (draggingIdx !== -1) {
+    // 配置済みパレットをドラッグ移動
+    const p = placedPallets[draggingIdx];
+    const c = getC();
+    const rawX = mmX - dragOffsetX;
+    const rawY = mmY - dragOffsetY;
+    p.x = Math.min(Math.max(0, snapTo(rawX, 100)), c.L - p.d);
+    p.y = Math.min(Math.max(0, snapTo(rawY, 100)), c.W - p.w);
+  }
+  render();
+});
+
+canvas.addEventListener('mouseenter', () => { isOverCanvas = true;  render(); });
+canvas.addEventListener('mouseleave', () => {
+  isOverCanvas = false;
+  hoverPos = null;
+  if (draggingIdx !== -1) {
+    // キャンバス外でマウスボタンが離れた場合の安全策
+    draggingIdx = -1;
+  }
+  render();
+});
+
+// mousedown: 配置済みパレットのドラッグ開始 or 選択
+canvas.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  if (currentMode !== 'manual') return;
+  const { mmX, mmY } = canvasMmPos(e);
+
+  const hit = placedPallets.findIndex(p =>
+    mmX >= p.x && mmX <= p.x + p.d && mmY >= p.y && mmY <= p.y + p.w
+  );
+  if (hit !== -1) {
+    draggingIdx  = hit;
+    dragOffsetX  = mmX - placedPallets[hit].x;
+    dragOffsetY  = mmY - placedPallets[hit].y;
+    canvas.style.cursor = 'grabbing';
+    // selectedIdxはmouseupで確定（ドラッグか単クリックか判別後）
+    e.preventDefault();
+    return;
+  }
+});
+
+// mouseup: ドラッグ終了 or クリック選択 or 新規配置
+canvas.addEventListener('mouseup', e => {
+  if (e.button !== 0) return;
+
+  if (draggingIdx !== -1) {
+    const { mmX, mmY } = canvasMmPos(e);
+    const p = placedPallets[draggingIdx];
+    // ドラッグ距離が5mm超なら移動確定、それ以下はクリック（選択トグル）
+    const distX = Math.abs(mmX - (placedPallets[draggingIdx].x + dragOffsetX));
+    const distY = Math.abs(mmY - (placedPallets[draggingIdx].y + dragOffsetY));
+    const isDrag = distX > 5 || distY > 5;
+    if (isDrag) {
+      pushHistory();
+      selectedIdx = draggingIdx;
+    } else {
+      selectedIdx = selectedIdx === draggingIdx ? -1 : draggingIdx;
+    }
+    draggingIdx = -1;
+    canvas.style.cursor = currentMode === 'manual' ? 'crosshair' : 'default';
+    render(); updateStats();
+    return;
+  }
+
+  if (currentMode !== 'manual') return;
+
+  const { mmX, mmY } = canvasMmPos(e);
   const hit = placedPallets.findIndex(p =>
     mmX >= p.x && mmX <= p.x + p.d && mmY >= p.y && mmY <= p.y + p.w
   );
   if (hit !== -1) {
     selectedIdx = selectedIdx === hit ? -1 : hit;
-    render(); updateStats(); return;
+    render(); updateStats();
+    return;
   }
 
+  // 新規パレット配置（中心起点）
   const orient = orientations[activePalletType];
   const { w, d } = getPalletDims(activePalletType, orient);
-  // Center pallet on click: d=length(X), w=width(Y)
-  const sx = Math.max(0, snapTo(mmX - d/2, 100));
-  const sy = Math.max(0, snapTo(mmY - w/2, 100));
+  const sx = Math.min(Math.max(0, snapTo(mmX - d/2, 100)), getC().L - d);
+  const sy = Math.min(Math.max(0, snapTo(mmY - w/2, 100)), getC().W - w);
+  pushHistory();
   placedPallets.push({ id: ++idCounter, type: activePalletType, orient, x: sx, y: sy, w, d });
-  selectedIdx = placedPallets.length - 1;
+  selectedIdx = -1;
   render(); updateStats();
 });
 
-document.addEventListener('keydown', e => {
-  if (selectedIdx === -1) return;
-  const step = e.shiftKey ? 100 : 10;
-  const p = placedPallets[selectedIdx];
-  if (e.key === 'ArrowLeft')  p.x -= step;
-  if (e.key === 'ArrowRight') p.x += step;
-  if (e.key === 'ArrowUp')    p.y -= step;
-  if (e.key === 'ArrowDown')  p.y += step;
-  if (e.key === 'Delete' || e.key === 'Backspace') {
-    placedPallets.splice(selectedIdx, 1); selectedIdx = -1;
-  }
-  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Delete','Backspace'].includes(e.key)) {
-    e.preventDefault(); render(); updateStats();
+// ウィンドウ全体でmouseupをキャッチ（キャンバス外でボタンを離した場合）
+window.addEventListener('mouseup', () => {
+  if (draggingIdx !== -1) {
+    draggingIdx = -1;
+    canvas.style.cursor = 'crosshair';
+    render(); updateStats();
   }
 });
 
-['drag-eur','drag-vmf'].forEach(id => {
+// Rキーのキーリピート抑制用フラグ
+let rKeyDown = false;
+
+document.addEventListener('keydown', e => {
+  // Ctrl+Z: undo
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+    e.preventDefault(); undo(); return;
+  }
+  // Ctrl+Y: redo
+  if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+    e.preventDefault(); redo(); return;
+  }
+  // Rキー: 操作モードのみ・キーリピート抑制
+  if (e.key === 'r' || e.key === 'R') {
+    if (currentMode !== 'manual' || rKeyDown) return;
+    rKeyDown = true;
+
+    if (selectedIdx !== -1) {
+      // 選択中パレットをその場でrotate
+      const p = placedPallets[selectedIdx];
+      const c = getC();
+      pushHistory();
+      // w↔d を入れ替え、orient反転
+      const newOrient = p.orient === 'H' ? 'V' : 'H';
+      const newW = p.d;
+      const newD = p.w;
+      // 中心を維持したまま位置を調整（はみ出さないようにクランプ）
+      const cx = p.x + p.d / 2;
+      const cy = p.y + p.w / 2;
+      const nx = Math.min(Math.max(0, cx - newD / 2), c.L - newD);
+      const ny = Math.min(Math.max(0, cy - newW / 2), c.W - newW);
+      p.orient = newOrient;
+      p.w = newW;
+      p.d = newD;
+      p.x = nx;
+      p.y = ny;
+    } else {
+      // 選択なし → アクティブパレット種別の向きを切り替え（ホバーに反映）
+      orientations[activePalletType] = orientations[activePalletType] === 'H' ? 'V' : 'H';
+      requestAnimationFrame(() => {
+        ['eur-h','eur-v','vmf-h','vmf-v','gma-h','gma-v'].forEach(id => {
+          const el = document.getElementById(id); if (el) el.className = '';
+        });
+        const btnId = `${activePalletType.toLowerCase()}-${orientations[activePalletType].toLowerCase()}`;
+        const btn = document.getElementById(btnId);
+        if (btn) btn.className = `active-${activePalletType.toLowerCase()}`;
+      });
+    }
+    render(); updateStats();
+    return;
+  }
+
+  if (selectedIdx === -1) return;
+
+  const step = snapEnabled ? 100 : (e.shiftKey ? 100 : 10);
+
+  // 移動キー判定
+  let dx = 0, dy = 0;
+  if (moveMode === 'arrow') {
+    if (e.key === 'ArrowLeft')  dx = -step;
+    if (e.key === 'ArrowRight') dx =  step;
+    if (e.key === 'ArrowUp')    dy = -step;
+    if (e.key === 'ArrowDown')  dy =  step;
+  } else {
+    if (e.key === 'a' || e.key === 'A') dx = -step;
+    if (e.key === 'd' || e.key === 'D') dx =  step;
+    if (e.key === 'w' || e.key === 'W') dy = -step;
+    if (e.key === 's' || e.key === 'S') dy =  step;
+  }
+  const isMove = dx !== 0 || dy !== 0;
+  const isDel  = e.key === 'Delete' || e.key === 'Backspace';
+  if (!isMove && !isDel) return;
+  e.preventDefault();
+  pushHistory();
+  const p = placedPallets[selectedIdx];
+  const c = getC();
+  if (isMove) {
+    p.x = Math.min(Math.max(0, p.x + dx), c.L - p.d);
+    p.y = Math.min(Math.max(0, p.y + dy), c.W - p.w);
+  }
+  if (isDel) { placedPallets.splice(selectedIdx, 1); selectedIdx = -1; }
+  render(); updateStats();
+});
+
+document.addEventListener('keyup', e => {
+  if (e.key === 'r' || e.key === 'R') rKeyDown = false;
+});
+
+
+
+['drag-eur','drag-vmf','drag-gma'].forEach(id => {
   const el = document.getElementById(id);
   el.addEventListener('dragstart', e => {
     dragType = el.dataset.type;
@@ -684,32 +1649,102 @@ canvas.addEventListener('drop', e => {
   if (!dragType) return;
   e.preventDefault();
   const rect = canvas.getBoundingClientRect();
-  const mmX = (e.clientX - rect.left) / scale;  // along LENGTH (X)
-  const mmY = (e.clientY - rect.top)  / scale;  // along WIDTH  (Y)
+  const mmX = (e.clientX - rect.left) / scale;
+  const mmY = (e.clientY - rect.top)  / scale;
   const orient = orientations[dragType];
   const { w, d } = getPalletDims(dragType, orient);
-  // d = length footprint, w = width footprint
-  const sx = Math.max(0, snapTo(mmX - d/2, 100));
-  const sy = Math.max(0, snapTo(mmY - w/2, 100));
+  const sx = Math.min(Math.max(0, snapTo(mmX, 100)), getC().L - d);
+  const sy = Math.min(Math.max(0, snapTo(mmY, 100)), getC().W - w);
   placedPallets.push({ id: ++idCounter, type: dragType, orient, x: sx, y: sy, w, d });
   selectedIdx = placedPallets.length - 1;
   dragType = null;
   render(); updateStats();
 });
 
-['drag-eur','drag-vmf'].forEach(id => {
+['drag-eur','drag-vmf','drag-gma'].forEach(id => {
   document.getElementById(id).addEventListener('click', () => {
-    activePalletType = id === 'drag-eur' ? 'EUR' : 'VMF';
+    activePalletType = id === 'drag-eur' ? 'EUR' : id === 'drag-vmf' ? 'VMF' : 'GMA';
   });
 });
 
 // ─────────────────────────────────────────
 //  CONTROLS
 // ─────────────────────────────────────────
+
+// モード切替
+const MODE_CONFIG = {
+  fill:   { tabClass: 'active-fill',   indKey: 'modeIndicatorFill',   hintKey: 'hintFill'   },
+  check:  { tabClass: 'active-check',  indKey: 'modeIndicatorCheck',  hintKey: 'hintCheck'  },
+  manual: { tabClass: 'active-manual', indKey: 'modeIndicatorManual', hintKey: 'hintPlace'  },
+};
+
+function setMode(mode) {
+  const prevMode = currentMode;
+  currentMode = mode;
+
+  ['fill','check','manual'].forEach(m => {
+    const tab = document.getElementById('tab-' + m);
+    tab.className = 'mode-tab' + (m === mode ? ' ' + MODE_CONFIG[m].tabClass : '');
+  });
+  ['fill','check','manual'].forEach(m => {
+    document.getElementById('panel-' + m).classList.toggle('active', m === mode);
+  });
+  const ind = document.getElementById('mode-indicator');
+  ind.textContent = t(MODE_CONFIG[mode].indKey);
+  ind.id          = 'mode-indicator';
+  ind.className   = MODE_CONFIG[mode].tabClass.replace('active-','');
+  document.getElementById('canvas-hint').textContent = t(MODE_CONFIG[mode].hintKey);
+  canvas.style.cursor = mode === 'manual' ? 'crosshair' : 'default';
+
+  // 操作モード → 判別モードへの切り替え時：配置枚数を入力欄に反映
+  if (mode === 'check' && prevMode === 'manual' && placedPallets.length > 0) {
+    const eurCount = placedPallets.filter(p => p.type === 'EUR').length;
+    const vmfCount = placedPallets.filter(p => p.type === 'VMF').length;
+    const eurInput = document.getElementById('check-eur');
+    const vmfInput = document.getElementById('check-vmf');
+    if (eurInput && eurCount > 0) eurInput.value = eurCount;
+    if (vmfInput && vmfCount > 0) vmfInput.value = vmfCount;
+  }
+
+  // checkモード以外ではoverflow枠とバナーを非表示
+  const ovWrap = document.getElementById('overflow-wrapper');
+  const banner = document.getElementById('check-banner');
+  const detail = document.getElementById('check-result-detail');
+  if (mode === 'check') {
+    if (overflowPallets.length > 0) ovWrap.style.display = 'block';
+  } else {
+    ovWrap.style.display = 'none';
+    banner.style.display = 'none';
+    if (detail) detail.style.display = 'none';
+    overflowPallets = [];
+    overflowSelectedIdx = -1;
+  }
+
+  render();
+}
+
+function toggleGma() {
+  const body = document.getElementById('gma-card-body');
+  const icon = document.getElementById('gma-toggle-icon');
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  icon.textContent   = isOpen ? '▶' : '▼';
+}
+
+function toggleMoveMode() {
+  moveMode = moveMode === 'arrow' ? 'wasd' : 'arrow';
+  const label  = document.getElementById('move-key-label');
+  const desc   = document.getElementById('move-key-desc');
+  const toggle = document.getElementById('move-key-toggle');
+  if (label)  label.textContent  = moveMode === 'arrow' ? '↑↓←→' : 'WASD';
+  if (desc)   desc.textContent   = moveMode === 'arrow' ? t('hintMoveArrow') : t('hintMoveWasd');
+  if (toggle) toggle.textContent = moveMode === 'arrow' ? t('btnWasd') : t('wasdToggle');
+}
+
 function setOrient(type, o) {
   orientations[type] = o;
   activePalletType = type;
-  ['eur-h','eur-v','vmf-h','vmf-v'].forEach(id => {
+  ['eur-h','eur-v','vmf-h','vmf-v','gma-h','gma-v'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.className = '';
   });
@@ -722,6 +1757,7 @@ function setFillType(t) {
   fillType = t;
   document.getElementById('fill-eur').className = 'fill-type-btn' + (t==='EUR' ? ' sel-eur' : '');
   document.getElementById('fill-vmf').className = 'fill-type-btn' + (t==='VMF' ? ' sel-vmf' : '');
+  document.getElementById('fill-gma').className = 'fill-type-btn' + (t==='GMA' ? ' sel-gma' : '');
   updateHoldBanner();
 }
 
@@ -742,17 +1778,18 @@ function updateDimDisplay() {
 function toggleSnap() {
   snapEnabled = !snapEnabled;
   const btn = document.getElementById('btn-snap');
-  btn.textContent = `スナップ: ${snapEnabled ? 'ON' : 'OFF'}`;
+  btn.textContent = snapEnabled ? t('snapOn') : t('snapOff');
   btn.classList.toggle('active', snapEnabled);
 }
 function toggleGrid() {
   gridEnabled = !gridEnabled;
   const btn = document.getElementById('btn-grid');
-  btn.textContent = `グリッド: ${gridEnabled ? 'ON' : 'OFF'}`;
+  btn.textContent = gridEnabled ? t('gridOn') : t('gridOff');
   btn.classList.toggle('active', gridEnabled);
   render();
 }
 function clearAll() {
+  pushHistory();
   placedPallets = []; selectedIdx = -1; render(); updateStats();
 }
 
@@ -762,15 +1799,16 @@ function clearAll() {
 function updateStats() {
   const eurN  = placedPallets.filter(p => p.type === 'EUR').length;
   const vmfN  = placedPallets.filter(p => p.type === 'VMF').length;
+  const gmaN  = placedPallets.filter(p => p.type === 'GMA').length;
   const total = placedPallets.length;
   const c = getC();
-  // Use effective floor area (excluding reefer generator block)
   const effArea = (c.L - c.reeferOffset) * c.W;
   const usedArea = placedPallets.reduce((s,p) => s + p.w * p.d, 0);
   const pct = Math.min(100, (usedArea / effArea * 100)).toFixed(1);
 
   document.getElementById('stat-eur').textContent = eurN;
   document.getElementById('stat-vmf').textContent = vmfN;
+  document.getElementById('stat-gma').textContent = gmaN;
   document.getElementById('stat-total').textContent = total;
   const pctEl = document.getElementById('stat-pct');
   pctEl.textContent = pct + '%';
@@ -786,14 +1824,25 @@ function updateStats() {
   const list = document.getElementById('placed-list');
   list.innerHTML = '';
   if (!total) {
-    list.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px">パレットが未配置です</div>';
+    list.innerHTML = `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px">${t('noPallets')}</div>`;
     return;
   }
   placedPallets.forEach((p, i) => {
+    const c = getC();
+    const isOverlap   = checkOverlap(p, i);
+    const outOfBounds = p.x < 0 || p.y < 0 || (p.x + p.d) > c.L || (p.y + p.w) > c.W;
+    const isBad       = isOverlap || outOfBounds;
+    const isSel       = i === selectedIdx;
+
     const div = document.createElement('div');
     div.className = `placed-item ${p.type.toLowerCase()}`;
-    if (i === selectedIdx) div.style.borderColor = '#fff';
-    div.innerHTML = `<span class="pi-label">#${String(p.id).padStart(2,'0')} ${p.type} ${p.w}×${p.d}</span><button class="pi-del" onclick="removePallet(${i})">×</button>`;
+    if (isBad) {
+      div.style.borderColor      = 'var(--danger)';
+      div.style.backgroundColor  = 'rgba(224,82,82,0.12)';
+    } else if (isSel) {
+      div.style.borderColor = '#fff';
+    }
+    div.innerHTML = `<span class="pi-label" style="${isBad ? 'color:var(--danger)' : ''}">#${String(p.id).padStart(2,'0')} ${p.type} ${p.w}×${p.d}</span><button class="pi-del" onclick="removePallet(${i})">×</button>`;
     div.addEventListener('click', ev => {
       if (ev.target.classList.contains('pi-del')) return;
       selectedIdx = i; render(); updateStats();
@@ -809,6 +1858,244 @@ function removePallet(i) {
 }
 
 // ─────────────────────────────────────────
+//  NOTICE POPUP
+// ─────────────────────────────────────────
+function toggleNoticePopup() {
+  const popup = document.getElementById('notice-popup');
+  const isOpen = popup.style.display === 'flex';
+  if (isOpen) {
+    popup.style.display = 'none';
+    return;
+  }
+  // 現在の言語で内容を更新
+  document.getElementById('notice-title').textContent = t('noticeTitle');
+  const lines = t('noticeLines');
+  document.getElementById('notice-body').innerHTML =
+    lines.map(l => `<p style="margin:0 0 10px;">${l}</p>`).join('');
+  popup.style.display = 'flex';
+}
+
+// ポップアップ外クリックで閉じる
+document.addEventListener('click', e => {
+  const popup = document.getElementById('notice-popup');
+  if (popup && popup.style.display === 'flex' && e.target === popup) {
+    popup.style.display = 'none';
+  }
+});
+
+// ─────────────────────────────────────────
+//  COPY CANVAS TO CLIPBOARD
+// ─────────────────────────────────────────
+function copyCanvasToClipboard() {
+  const btn = document.getElementById('btn-copy-canvas');
+
+  const COPY_ICON  = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="9" height="10" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v7A1.5 1.5 0 0 0 3.5 12H5"/></svg>`;
+  const CHECK_ICON = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 8 6 12 14 4"/></svg>`;
+  const DL_ICON    = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v9M4 7l4 4 4-4"/><path d="M2 13h12"/></svg>`;
+  const DEFAULT_COLOR = 'var(--accent)';
+  const DEFAULT_BORDER = 'rgba(240,180,41,0.4)';
+
+  function setFeedback(icon, text, color, duration) {
+    btn.style.color       = color;
+    btn.style.borderColor = color;
+    btn.style.background  = '';
+    btn.innerHTML = icon + ' ' + text;
+    setTimeout(() => {
+      btn.style.color       = DEFAULT_COLOR;
+      btn.style.borderColor = DEFAULT_BORDER;
+      btn.style.background  = '';
+      btn.innerHTML = COPY_ICON + ' コピー';
+    }, duration);
+  }
+
+  // 注釈テキスト（現在の言語から取得）
+  const disclaimer = [t('noticeTitle'), ...t('noticeLines')];
+
+  // オフスクリーンcanvasを生成（メインcanvas + 下部余白＋注釈）
+  function buildExportCanvas() {
+    const paddingX   = 32;
+    const paddingTop = 24;
+    const paddingBot = 28;
+    const bodySize   = 11;
+    const titleSize  = 12;
+    const lineHeight = 17;
+    const canvasW    = canvas.width;
+
+    // テキスト折り返し用ヘルパー（測定用の仮canvasを使用）
+    const measurer = document.createElement('canvas').getContext('2d');
+    function wrapText(text, font, maxWidth) {
+      measurer.font = font;
+      const words = text.split('');  // 日本語は文字単位で折り返す
+      const lines = [];
+      let current = '';
+      for (const ch of words) {
+        const test = current + ch;
+        if (measurer.measureText(test).width > maxWidth && current !== '') {
+          lines.push(current);
+          current = ch;
+        } else {
+          current = test;
+        }
+      }
+      if (current) lines.push(current);
+      return lines;
+    }
+
+    const exportW  = canvasW + paddingX * 2;
+    const textMaxW = exportW - paddingX * 2;
+    const titleFont = `600 ${titleSize}px sans-serif`;
+    const bodyFont  = `${bodySize}px sans-serif`;
+
+    // 各行のテキストを折り返し展開
+    const renderedLines = [];  // { text, isTitle }
+    disclaimer.forEach((line, i) => {
+      const font = i === 0 ? titleFont : bodyFont;
+      const wrapped = wrapText(line, font, textMaxW);
+      wrapped.forEach(l => renderedLines.push({ text: l, isTitle: i === 0 }));
+      if (i > 0 && i < disclaimer.length - 1) renderedLines.push({ text: '', isTitle: false }); // 段落間の空行
+    });
+
+    const containerLabel = {
+      '20dry': '20ft Dry Container',
+      '40dry': '40ft Dry Container',
+      '20ref': '20ft Reefer Container',
+      '40ref': '40ft Reefer Container',
+    }[containerType] || containerType;
+
+    // 統計情報の計算
+    const eurN  = placedPallets.filter(p => p.type === 'EUR').length;
+    const vmfN  = placedPallets.filter(p => p.type === 'VMF').length;
+    const gmaN  = placedPallets.filter(p => p.type === 'GMA').length;
+    const totalN = placedPallets.length;
+    const c = getC();
+    const effArea  = (c.L - c.reeferOffset) * c.W;
+    const usedArea = placedPallets.reduce((s, p) => s + p.w * p.d, 0);
+    const pct = Math.min(100, (usedArea / effArea * 100)).toFixed(1);
+
+    const footerH = paddingTop + renderedLines.length * lineHeight + paddingBot;
+    // 上部：コンテナタイプ行(20px) + バッジ行(28px) + 余白(10px)
+    const labelAreaH = 58;
+    const exportH = labelAreaH + canvas.height + paddingTop + footerH;
+
+    const oc    = document.createElement('canvas');
+    oc.width    = exportW;
+    oc.height   = exportH;
+    const octx  = oc.getContext('2d');
+
+    // 背景
+    octx.fillStyle = '#0D1D2E';
+    octx.fillRect(0, 0, oc.width, oc.height);
+
+    // ── 1行目：コンテナタイプ（左）＋ 使用率（右） ──
+    octx.textBaseline = 'top';
+    octx.font      = `600 13px sans-serif`;
+    octx.fillStyle = 'rgba(255,255,255,0.85)';
+    octx.textAlign = 'left';
+    octx.fillText(containerLabel, paddingX, 10);
+
+    octx.font      = `11px sans-serif`;
+    octx.fillStyle = 'rgba(255,255,255,0.45)';
+    octx.textAlign = 'right';
+    octx.fillText(`合計 ${totalN}枚　使用率 ${pct}%`, exportW - paddingX, 12);
+    octx.textAlign = 'left';
+
+    // ── 2行目：パレット種別バッジ ──
+    const badges = [
+      { label: 'EUR', count: eurN, color: '#2ECC71', bg: 'rgba(46,204,113,0.18)' },
+      { label: 'VMF', count: vmfN, color: '#3A9FE8', bg: 'rgba(58,159,232,0.18)' },
+      { label: 'GMA', count: gmaN, color: '#E8B84B', bg: 'rgba(232,184,75,0.18)' },
+    ].filter(b => b.count > 0);
+
+    let bx = paddingX;
+    const by = 32;
+    const bh = 20;
+    const bPadX = 8;
+
+    badges.forEach(b => {
+      const text = `${b.label}  ${b.count}枚`;
+      octx.font = `600 11px sans-serif`;
+      const tw = octx.measureText(text).width;
+      const bw = tw + bPadX * 2;
+
+      // バッジ背景
+      octx.fillStyle = b.bg;
+      octx.beginPath();
+      octx.roundRect(bx, by, bw, bh, 4);
+      octx.fill();
+
+      // バッジ左端のカラーライン
+      octx.fillStyle = b.color;
+      octx.beginPath();
+      octx.roundRect(bx, by, 3, bh, [4, 0, 0, 4]);
+      octx.fill();
+
+      // テキスト
+      octx.fillStyle = b.color;
+      octx.textBaseline = 'middle';
+      octx.fillText(text, bx + bPadX + 2, by + bh / 2);
+
+      bx += bw + 8;
+    });
+
+    // メインcanvasをラベル下に描画
+    octx.drawImage(canvas, paddingX, labelAreaH);
+
+    // 区切り線
+    const canvasDrawY = labelAreaH;
+    const dividerY = canvasDrawY + canvas.height + paddingTop * 0.75;
+    octx.strokeStyle = 'rgba(255,255,255,0.12)';
+    octx.lineWidth   = 0.5;
+    octx.beginPath();
+    octx.moveTo(paddingX, dividerY);
+    octx.lineTo(exportW - paddingX, dividerY);
+    octx.stroke();
+
+    // 注釈テキスト描画
+    let y = dividerY + paddingTop * 0.75;
+    renderedLines.forEach(({ text, isTitle }) => {
+      if (text === '') { y += lineHeight * 0.4; return; }
+      if (isTitle) {
+        octx.font      = titleFont;
+        octx.fillStyle = 'rgba(255,255,255,0.75)';
+      } else {
+        octx.font      = bodyFont;
+        octx.fillStyle = 'rgba(255,255,255,0.45)';
+      }
+      octx.textBaseline = 'top';
+      octx.fillText(text, paddingX, y);
+      y += lineHeight;
+    });
+
+    return oc;
+  }
+
+  const exportCanvas = buildExportCanvas();
+
+  if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
+    exportCanvas.toBlob(blob => {
+      if (!blob) { fallbackDownload(exportCanvas); return; }
+      navigator.clipboard.write([new ClipboardItem({'image/png': blob})])
+        .then(() => {
+          setFeedback(CHECK_ICON, 'コピー完了', '#2ECC71', 2000);
+        })
+        .catch(() => fallbackDownload(exportCanvas));
+    }, 'image/png');
+  } else {
+    fallbackDownload(exportCanvas);
+  }
+
+  function fallbackDownload(oc) {
+    const a = document.createElement('a');
+    a.href = oc.toDataURL('image/png');
+    a.download = `container-layout-${containerType}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setFeedback(DL_ICON, '保存しました', 'var(--accent)', 2500);
+  }
+}
+
+// ─────────────────────────────────────────
 //  RESIZE & BOOT
 // ─────────────────────────────────────────
 window.addEventListener('resize', () => { setupCanvas(); render(); });
@@ -818,6 +2105,8 @@ function init() {
   updateDimDisplay();
   document.getElementById('eur-h').className = 'active-eur';
   document.getElementById('vmf-h').className = 'active-vmf';
+  document.getElementById('gma-h').className = 'active-gma';
+  setMode('fill');
   render();
   updateStats();
   updateHoldBanner();
