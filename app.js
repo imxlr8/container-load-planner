@@ -1028,116 +1028,124 @@ return {
 }
 
 // mousemove: ホバープレビュー更新 & 配置済みパレットのドラッグ移動
-canvas.addEventListener('mousemove', e => {
-const { mmX, mmY } = canvasMmPos(e);
-hoverPos = { mmX, mmY };
+// ─────────────────────────────────────────
+//  CANVAS POINTER EVENTS（mouse・touch・stylus統一）
+// ─────────────────────────────────────────
 
-if (draggingIdx !== -1) {
-  const p = placedPallets[draggingIdx];
-  const c = getC();
-  const rawX = mmX - dragOffsetX;
-  const rawY = mmY - dragOffsetY;
-  p.x = Math.min(Math.max(0, snapTo(rawX, 100)), c.L - p.d);
-  p.y = Math.min(Math.max(0, snapTo(rawY, 100)), c.W - p.w);
-  invalidateOverlapCache();  // ② ドラッグ中は位置が変わるので都度無効化
-}
-
-// ③ rAFスロットル：前フレームが描画済みの時だけ次のrenderをスケジュール
-if (!rafPending) {
-  rafPending = true;
-  requestAnimationFrame(() => {
-    rafPending = false;
-    render();
-  });
-}
-});
-
-canvas.addEventListener('mouseenter', () => { isOverCanvas = true;  render(); });
-canvas.addEventListener('mouseleave', () => {
-isOverCanvas = false;
-hoverPos = null;
-if (draggingIdx !== -1) {
-  // キャンバス外でマウスボタンが離れた場合の安全策
-  draggingIdx = -1;
-}
-render();
-});
-
-// mousedown: 配置済みパレットのドラッグ開始 or 選択
-canvas.addEventListener('mousedown', e => {
-if (e.button !== 0) return;
-if (currentMode !== 'manual') return;
-const { mmX, mmY } = canvasMmPos(e);
-
-const hit = placedPallets.findIndex(p =>
-  mmX >= p.x && mmX <= p.x + p.d && mmY >= p.y && mmY <= p.y + p.w
-);
-if (hit !== -1) {
-  draggingIdx  = hit;
-  dragOffsetX  = mmX - placedPallets[hit].x;
-  dragOffsetY  = mmY - placedPallets[hit].y;
-  canvas.style.cursor = 'grabbing';
-  // selectedIdxはmouseupで確定（ドラッグか単クリックか判別後）
-  e.preventDefault();
-  return;
-}
-});
-
-// mouseup: ドラッグ終了 or クリック選択 or 新規配置
-canvas.addEventListener('mouseup', e => {
-if (e.button !== 0) return;
-
-if (draggingIdx !== -1) {
-  const { mmX, mmY } = canvasMmPos(e);
-  const p = placedPallets[draggingIdx];
-  // ドラッグ距離が5mm超なら移動確定、それ以下はクリック（選択トグル）
-  const distX = Math.abs(mmX - (placedPallets[draggingIdx].x + dragOffsetX));
-  const distY = Math.abs(mmY - (placedPallets[draggingIdx].y + dragOffsetY));
-  const isDrag = distX > 5 || distY > 5;
-  if (isDrag) {
-    pushHistory();
-    selectedIdx = draggingIdx;
-    invalidateOverlapCache();
-  } else {
-    selectedIdx = selectedIdx === draggingIdx ? -1 : draggingIdx;
+canvas.addEventListener('pointermove', e => {
+  // タッチの場合はホバープレビューなし
+  if (e.pointerType === 'touch') {
+    if (draggingIdx === -1) return;
   }
-  draggingIdx = -1;
-  canvas.style.cursor = currentMode === 'manual' ? 'crosshair' : 'default';
-  render(); updateStats();
-  return;
-}
+  const { mmX, mmY } = canvasMmPos(e);
+  hoverPos = { mmX, mmY };
 
-if (currentMode !== 'manual') return;
+  if (draggingIdx !== -1) {
+    const p = placedPallets[draggingIdx];
+    const c = getC();
+    const rawX = mmX - dragOffsetX;
+    const rawY = mmY - dragOffsetY;
+    p.x = Math.min(Math.max(0, snapTo(rawX, 100)), c.L - p.d);
+    p.y = Math.min(Math.max(0, snapTo(rawY, 100)), c.W - p.w);
+    invalidateOverlapCache();
+  }
 
-const { mmX, mmY } = canvasMmPos(e);
-const hit = placedPallets.findIndex(p =>
-  mmX >= p.x && mmX <= p.x + p.d && mmY >= p.y && mmY <= p.y + p.w
-);
-if (hit !== -1) {
-  selectedIdx = selectedIdx === hit ? -1 : hit;
-  render(); updateStats();
-  return;
-}
-
-// 新規パレット配置（中心起点）
-const orient = orientations[activePalletType];
-const { w, d } = getPalletDims(activePalletType, orient);
-const sx = Math.min(Math.max(0, snapTo(mmX - d/2, 100)), getC().L - d);
-const sy = Math.min(Math.max(0, snapTo(mmY - w/2, 100)), getC().W - w);
-pushHistory();
-placedPallets.push({ id: ++idCounter, type: activePalletType, orient, x: sx, y: sy, w, d });
-selectedIdx = -1;
-invalidateOverlapCache();
-render(); updateStats();
+  if (!rafPending) {
+    rafPending = true;
+    requestAnimationFrame(() => { rafPending = false; render(); });
+  }
 });
 
-// ウィンドウ全体でmouseupをキャッチ（キャンバス外でボタンを離した場合）
-window.addEventListener('mouseup', () => {
-if (draggingIdx !== -1) {
-  draggingIdx = -1;
-  canvas.style.cursor = 'crosshair';
+canvas.addEventListener('pointerenter', () => { isOverCanvas = true;  render(); });
+canvas.addEventListener('pointerleave', () => {
+  isOverCanvas = false;
+  hoverPos = null;
+  if (draggingIdx !== -1) draggingIdx = -1;
+  render();
+});
+
+// pointerdown: ドラッグ開始 or 選択
+canvas.addEventListener('pointerdown', e => {
+  if (e.button !== 0 && e.pointerType !== 'touch') return;
+  if (currentMode !== 'manual') return;
+  const { mmX, mmY } = canvasMmPos(e);
+
+  const hit = placedPallets.findIndex(p =>
+    mmX >= p.x && mmX <= p.x + p.d && mmY >= p.y && mmY <= p.y + p.w
+  );
+  if (hit !== -1) {
+    draggingIdx  = hit;
+    dragOffsetX  = mmX - placedPallets[hit].x;
+    dragOffsetY  = mmY - placedPallets[hit].y;
+    canvas.style.cursor = 'grabbing';
+    canvas.setPointerCapture(e.pointerId);  // タッチドラッグで外に出てもキャプチャ
+    e.preventDefault();
+    return;
+  }
+});
+
+// pointerup: ドラッグ確定 or 選択トグル or 新規配置
+canvas.addEventListener('pointerup', e => {
+  if (e.button !== 0 && e.pointerType !== 'touch') return;
+
+  if (draggingIdx !== -1) {
+    const { mmX, mmY } = canvasMmPos(e);
+    const distX = Math.abs(mmX - (placedPallets[draggingIdx].x + dragOffsetX));
+    const distY = Math.abs(mmY - (placedPallets[draggingIdx].y + dragOffsetY));
+    const isDrag = distX > 5 || distY > 5;
+    if (isDrag) {
+      pushHistory();
+      selectedIdx = draggingIdx;
+      invalidateOverlapCache();
+    } else {
+      selectedIdx = selectedIdx === draggingIdx ? -1 : draggingIdx;
+    }
+    draggingIdx = -1;
+    canvas.style.cursor = currentMode === 'manual' ? 'crosshair' : 'default';
+    render(); updateStats();
+    return;
+  }
+
+  if (currentMode !== 'manual') return;
+
+  const { mmX, mmY } = canvasMmPos(e);
+  const hit = placedPallets.findIndex(p =>
+    mmX >= p.x && mmX <= p.x + p.d && mmY >= p.y && mmY <= p.y + p.w
+  );
+  if (hit !== -1) {
+    selectedIdx = selectedIdx === hit ? -1 : hit;
+    render(); updateStats();
+    return;
+  }
+
+  // 新規パレット配置（中心起点）
+  const orient = orientations[activePalletType];
+  const { w, d } = getPalletDims(activePalletType, orient);
+  const sx = Math.min(Math.max(0, snapTo(mmX - d/2, 100)), getC().L - d);
+  const sy = Math.min(Math.max(0, snapTo(mmY - w/2, 100)), getC().W - w);
+  pushHistory();
+  placedPallets.push({ id: ++idCounter, type: activePalletType, orient, x: sx, y: sy, w, d });
+  selectedIdx = -1;
+  invalidateOverlapCache();
   render(); updateStats();
-}
+});
+
+// ポインターキャンセル（タッチ中断など）
+canvas.addEventListener('pointercancel', () => {
+  if (draggingIdx !== -1) {
+    draggingIdx = -1;
+    canvas.style.cursor = currentMode === 'manual' ? 'crosshair' : 'default';
+    render(); updateStats();
+  }
+});
+
+// ウィンドウ全体でpointerupをキャッチ（キャンバス外でボタンを離した場合）
+window.addEventListener('pointerup', () => {
+  if (draggingIdx !== -1) {
+    draggingIdx = -1;
+    canvas.style.cursor = 'crosshair';
+    render(); updateStats();
+  }
 });
 
 // Rキーのキーリピート抑制用フラグ
@@ -1711,3 +1719,105 @@ updateStats();
 updateHoldBanner();
 }
 init();
+
+// ─────────────────────────────────────────
+//  MOBILE BOTTOM SHEET
+// ─────────────────────────────────────────
+(function() {
+  const sheet   = document.getElementById('left-panel');
+  const overlay = document.getElementById('sheet-overlay');
+  const fab     = document.getElementById('sheet-fab');
+  const handle  = document.getElementById('sheet-handle');
+  if (!sheet || !handle) return;
+
+  let sheetOpen  = false;
+  let dragStartY = 0;
+  let dragStartT = 0;
+  let currentTranslateY = 0;
+
+  function isMobile() { return window.innerWidth <= 767; }
+
+  function getClosedY() {
+    return sheet.offsetHeight - 52; // ハンドル分だけ見える
+  }
+
+  function applyTranslate(y, instant = false) {
+    if (instant) sheet.classList.add('sheet-dragging');
+    else         sheet.classList.remove('sheet-dragging');
+    sheet.style.transform = `translateY(${y}px)`;
+    currentTranslateY = y;
+  }
+
+  window.toggleSheet = function() {
+    if (!isMobile()) return;
+    sheetOpen ? closeSheet() : openSheet();
+  };
+
+  window.openSheet = function() {
+    sheetOpen = true;
+    sheet.classList.add('sheet-open');
+    sheet.classList.remove('sheet-dragging');
+    sheet.style.transform = '';
+    overlay.classList.add('visible');
+    fab.classList.add('open');
+    fab.setAttribute('aria-label', '設定を閉じる');
+  };
+
+  window.closeSheet = function() {
+    sheetOpen = false;
+    sheet.classList.remove('sheet-open');
+    sheet.classList.remove('sheet-dragging');
+    sheet.style.transform = '';
+    overlay.classList.remove('visible');
+    fab.classList.remove('open');
+    fab.setAttribute('aria-label', '設定を開く');
+  };
+
+  // ドラッグ操作（ハンドルをスワイプ）
+  handle.addEventListener('pointerdown', e => {
+    if (!isMobile()) return;
+    dragStartY = e.clientY;
+    dragStartT = Date.now();
+    currentTranslateY = sheetOpen ? 0 : getClosedY();
+    handle.setPointerCapture(e.pointerId);
+    sheet.classList.add('sheet-dragging');
+    e.preventDefault();
+  });
+
+  handle.addEventListener('pointermove', e => {
+    if (!isMobile() || !handle.hasPointerCapture(e.pointerId)) return;
+    const dy = e.clientY - dragStartY;
+    const newY = Math.max(0, Math.min(getClosedY(), currentTranslateY + dy));
+    applyTranslate(newY, true);
+  });
+
+  handle.addEventListener('pointerup', e => {
+    if (!isMobile() || !handle.hasPointerCapture(e.pointerId)) return;
+    sheet.classList.remove('sheet-dragging');
+    const dy      = e.clientY - dragStartY;
+    const dt      = Date.now() - dragStartT;
+    const vel     = dy / dt; // px/ms
+    const halfway = getClosedY() / 2;
+
+    // フリック or 半分以上動いたら切り替え
+    if (vel > 0.5 || (!sheetOpen && dy > halfway) || (sheetOpen && dy > halfway)) {
+      closeSheet();
+    } else if (vel < -0.5 || (!sheetOpen && dy < -halfway) || (sheetOpen && dy < -halfway)) {
+      openSheet();
+    } else {
+      sheetOpen ? openSheet() : closeSheet();
+    }
+    handle.releasePointerCapture(e.pointerId);
+  });
+
+  // リサイズ時にシートをリセット
+  window.addEventListener('resize', () => {
+    if (!isMobile()) {
+      sheet.style.transform = '';
+      sheet.classList.remove('sheet-open', 'sheet-dragging');
+      overlay.classList.remove('visible');
+      fab.classList.remove('open');
+      sheetOpen = false;
+    }
+  });
+})();

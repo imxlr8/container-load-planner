@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Container Load Planner</title>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-WB6R9VHEC4"></script>
@@ -38,6 +38,10 @@
   </header>
 
   <aside id="left-panel">
+    <!-- ボトムシート用ドラッグハンドル（モバイルのみ表示） -->
+    <div id="sheet-handle">
+      <div id="sheet-handle-bar"></div>
+    </div>
 
     <!-- Container selector (常時表示) -->
     <div>
@@ -274,6 +278,10 @@
   </aside>
 
 </div>
+
+<!-- モバイル用：ボトムシート開閉FABとオーバーレイ -->
+<button id="sheet-fab" onclick="toggleSheet()" aria-label="設定を開く">▲</button>
+<div id="sheet-overlay" onclick="closeSheet()"></div>
 
 <script src="app.js"></script>
 </body>
