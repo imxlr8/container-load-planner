@@ -1733,13 +1733,6 @@ init();
 
   function isMobile() { return window.innerWidth <= 1023; }
 
-  // ハンバーガーボタンの表示切替
-  function updateBtnVisibility() {
-    const m = isMobile();
-    if (btnLeft)  btnLeft.style.display  = m ? 'flex' : 'none';
-    if (btnRight) btnRight.style.display = m ? 'flex' : 'none';
-  }
-
   window.openDrawer = function(side) {
     if (side === 'left') {
       leftPanel.classList.add('drawer-open');
@@ -1759,7 +1752,6 @@ init();
 
   // リサイズ時にドロワーをリセット
   window.addEventListener('resize', () => {
-    updateBtnVisibility();
     if (!isMobile()) closeDrawers();
   });
 
@@ -1776,5 +1768,4 @@ init();
     if (isMobile()) closeDrawers();
   };
 
-  updateBtnVisibility();
 })();

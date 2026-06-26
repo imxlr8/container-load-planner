@@ -24,6 +24,7 @@
 
   /* Header */
   #header { grid-column: 1/-1; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; padding: 0 20px; }
+  .drawer-btn { display: none; }  /* PC時は非表示、モバイルCSSで上書き */
   .logo { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: var(--accent); letter-spacing: .05em; }
   .logo span { color: var(--muted); }
   .hdr-div { width: 1px; height: 24px; background: var(--border); }
