@@ -219,7 +219,7 @@ if (snapBtn) snapBtn.textContent = snapEnabled ? T.snapOn : T.snapOff;
 if (gridBtn) gridBtn.textContent = gridEnabled ? T.gridOn : T.gridOff;
 
 // モードインジケーターを更新
-const ind = document.getElementById('mode-indicator');
+const ind = dom('mode-indicator');
 if (ind) {
   const indMap = { fill: T.modeIndicatorFill, check: T.modeIndicatorCheck, manual: T.modeIndicatorManual };
   ind.textContent = indMap[currentMode] || ind.textContent;
@@ -227,10 +227,10 @@ if (ind) {
 
 // キャンバスヒントを更新（現在のモードに応じて）
 const MODE_HINTS = { fill: T.hintFill, check: '— ' + T.holdTitle + ' —', manual: T.hintPlace + ' / ' + T.hintDrag };
-document.getElementById('canvas-hint').textContent = MODE_HINTS[currentMode] || T.hintFill;
+dom('canvas-hint').textContent = MODE_HINTS[currentMode] || T.hintFill;
 
 // 未配置テキストを更新
-const list = document.getElementById('placed-list');
+const list = dom('placed-list');
 if (list && list.children.length === 1 && !placedPallets.length) {
   list.innerHTML = `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px">${T.noPallets}</div>`;
 }
@@ -247,11 +247,6 @@ return TRANSLATIONS[currentLang][key] || TRANSLATIONS['ja'][key] || key;
 // ─────────────────────────────────────────
 //  CONTAINER DEFINITIONS
 // ─────────────────────────────────────────
-// Canvas axes:
-//   X axis → container LENGTH direction (left=back/generator, right=DOOR)
-//   Y axis ↓ container WIDTH direction
-// L = internal length (mm), W = internal width (mm)
-// reeferOffset: mm from back wall occupied by generator (no-load zone)
 const CONTAINERS = {
 '20dry': { L: 5895,  W: 2350, label: '20ft Dry',    isReefer: false, reeferOffset: 0   },
 '40dry': { L: 12032, W: 2352, label: '40ft Dry',    isReefer: false, reeferOffset: 0   },
@@ -327,6 +322,13 @@ let orientations     = { EUR: 'H', VMF: 'H', GMA: 'H' };
 let placedPallets    = [];
 let selectedIdx      = -1;
 let selectedIndices  = new Set(); // 複数選択用
+
+// ─── DOM キャッシュ ───
+const domCache = {};
+function dom(id) {
+  if (!domCache[id]) domCache[id] = document.getElementById(id);
+  return domCache[id];
+}
 let snapEnabled      = true;
 let gridEnabled      = true;
 let dragType         = null;
@@ -499,8 +501,7 @@ if (gridEnabled) {
     const py = y * scale;
     ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(canvas.width, py); ctx.stroke();
   }
-  // Grid labels
-  ctx.fillStyle = 'rgba(107,139,164,0.45)';
+    ctx.fillStyle = 'rgba(107,139,164,0.45)';
   ctx.font = `${Math.max(7, scale * 110)}px JetBrains Mono, monospace`;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
@@ -509,11 +510,6 @@ if (gridEnabled) {
   }
 }
 
-// Pallets
-// Canvas: X = container LENGTH direction, Y = container WIDTH direction
-// p.x = position along length (X), p.y = position along width (Y)
-// p.d = size along length → drawn as canvas width (fillRect 3rd arg)
-// p.w = size along width  → drawn as canvas height (fillRect 4th arg)
 placedPallets.forEach((p, i) => {
   const px    = p.x * scale;
   const py    = p.y * scale;
@@ -748,6 +744,18 @@ if (palletArea > containerArea) {
 // GMA: long=1219, short=1016
 const ROW_HEIGHTS = [1219, 1200, 1016, 1000, 800];
 
+// 行高さの組み合わせを列挙するジェネレーター（tryLayout外でキャッシュ）
+function* genRowSequences(maxH, depth) {
+  yield [];
+  if (depth === 0 || maxH <= 0) return;
+  for (const h of ROW_HEIGHTS) {
+    if (h > maxH) continue;
+    for (const rest of genRowSequences(maxH - h, depth - 1)) {
+      yield [h, ...rest];
+    }
+  }
+}
+
 // 指定した行高さで全タイプを混在させて長さ方向に詰める
 function packRow(rowH, eurLeft, vmfLeft, gmaLeft, rowY) {
   // 各タイプの行高さに収まる向き
@@ -830,17 +838,6 @@ function packRow(rowH, eurLeft, vmfLeft, gmaLeft, rowY) {
 // ── 上端・下端からの行積み上げを全パターン試す ──
 function tryLayout(eurNeeded, vmfNeeded, gmaNeeded) {
   let bestLayout = null;
-
-  function* genRowSequences(maxH, depth) {
-    yield [];
-    if (depth === 0 || maxH <= 0) return;
-    for (const h of ROW_HEIGHTS) {
-      if (h > maxH) continue;
-      for (const rest of genRowSequences(maxH - h, depth - 1)) {
-        yield [h, ...rest];
-      }
-    }
-  }
 
   for (const topRows of genRowSequences(W, 3)) {
     const topH = topRows.reduce((s, h) => s + h, 0);
@@ -934,6 +931,23 @@ for (const [type, count] of ovEntries) {
 return { placed, overflow: overflowPals, eurOver, vmfOver, gmaOver };
 }
 
+// パレットタイプ別カウントを1回のループで取得
+function countPallets(pallets) {
+  const c = { EUR: 0, VMF: 0, GMA: 0 };
+  pallets.forEach(p => { if (c[p.type] !== undefined) c[p.type]++; });
+  return c;
+}
+
+// バナー表示ユーティリティ
+function setBanner(isOk, text) {
+  const banner = dom('check-banner');
+  if (!banner) return;
+  const OK_STYLE = 'display:block;padding:6px 20px;border-radius:8px;font-size:13px;font-family:JetBrains Mono,monospace;font-weight:600;border:1px solid var(--eur-fill);background:rgba(46,204,113,0.12);color:var(--eur-fill);white-space:pre;line-height:1.7;text-align:center;';
+  const NG_STYLE = 'display:block;padding:6px 20px;border-radius:8px;font-size:13px;font-family:JetBrains Mono,monospace;font-weight:600;border:1px solid var(--danger);background:rgba(224,82,82,0.12);color:var(--danger);white-space:pre;line-height:1.7;text-align:center;';
+  banner.style.cssText = isOk ? OK_STYLE : NG_STYLE;
+  banner.textContent   = text;
+}
+
 // 入力変化時の自動判別（EUR・VMFどちらかが1枚以上の時のみ実行）
 function autoCheck() {
   // 0枚でもrunCheckを呼ぶ（描画リセットのため）
@@ -941,17 +955,17 @@ function autoCheck() {
 }
 
 function runCheck() {
-const eurN = Math.max(0, parseInt(document.getElementById('check-eur').value) || 0);
-const vmfN = Math.max(0, parseInt(document.getElementById('check-vmf').value) || 0);
-const gmaN = Math.max(0, parseInt(document.getElementById('check-gma').value) || 0);
+const eurN = Math.max(0, parseInt(dom('check-eur').value) || 0);
+const vmfN = Math.max(0, parseInt(dom('check-vmf').value) || 0);
+const gmaN = Math.max(0, parseInt(dom('check-gma').value) || 0);
 
 // 全部0枚の場合はキャンバスとバナーをリセット
 if (eurN === 0 && vmfN === 0 && gmaN === 0) {
   placedPallets = []; overflowPallets = []; selectedIdx = -1; overflowSelectedIdx = -1;
   invalidateOverlapCache();
-  document.getElementById('check-banner').style.display = 'none';
-  document.getElementById('check-result-detail').style.display = 'none';
-  document.getElementById('overflow-wrapper').style.display = 'none';
+  dom('check-banner').style.display = 'none';
+  dom('check-result-detail').style.display = 'none';
+  dom('overflow-wrapper').style.display = 'none';
   render(); updateStats(); updateCenterInfo();
   return;
 }
@@ -965,34 +979,30 @@ overflowSelectedIdx = -1;
 idCounter = placedPallets.length + overflowPallets.length;
 invalidateOverlapCache();
 
-const eurPlaced = placedPallets.filter(p=>p.type==='EUR').length;
-const vmfPlaced = placedPallets.filter(p=>p.type==='VMF').length;
-const gmaPlaced = placedPallets.filter(p=>p.type==='GMA').length;
+const { EUR: eurPlaced, VMF: vmfPlaced, GMA: gmaPlaced } = countPallets(placedPallets);
 const eurOver   = result.eurOver || 0;
 const vmfOver   = result.vmfOver || 0;
 const gmaOver   = result.gmaOver || 0;
 const isOk      = eurOver === 0 && vmfOver === 0 && gmaOver === 0;
 
 // ── バナー ──
-const banner = document.getElementById('check-banner');
+const banner = dom('check-banner');
 const parts = [];
 if (eurN > 0) parts.push(`EUR ${eurPlaced}枚`);
 if (vmfN > 0) parts.push(`VMF ${vmfPlaced}枚`);
 if (gmaN > 0) parts.push(`GMA ${gmaPlaced}枚`);
 if (isOk) {
-  banner.style.cssText = 'display:block;padding:6px 20px;border-radius:8px;font-size:13px;font-family:JetBrains Mono,monospace;font-weight:600;border:1px solid var(--eur-fill);background:rgba(46,204,113,0.12);color:var(--eur-fill);white-space:pre;line-height:1.7;text-align:center;';
-  banner.textContent = `✓ 積載可能　${parts.join('　')}`;
+  setBanner(true, `✓ 積載可能　${parts.join('　')}`);
 } else {
   const overText = [];
   if (eurOver > 0) overText.push(`EUR ${eurOver}枚オーバー`);
   if (vmfOver > 0) overText.push(`VMF ${vmfOver}枚オーバー`);
   if (gmaOver > 0) overText.push(`GMA ${gmaOver}枚オーバー`);
-  banner.style.cssText = 'display:block;padding:6px 20px;border-radius:8px;font-size:13px;font-family:JetBrains Mono,monospace;font-weight:600;border:1px solid var(--danger);background:rgba(224,82,82,0.12);color:var(--danger);white-space:pre;line-height:1.7;text-align:center;';
-  banner.textContent = `✗ 積載不可　${overText.join(' / ')}\n${parts.join('　')} 積載　残り ${overText.join(' ')}`;
+  setBanner(false, `✗ 積載不可　${overText.join(' / ')}\n${parts.join('　')} 積載　残り ${overText.join(' ')}`);
 }
 
 // ── 詳細 ──
-const detail = document.getElementById('check-result-detail');
+const detail = dom('check-result-detail');
 let detailText = '';
 if (eurN > 0) { detailText += `EUR: ${eurPlaced}/${eurN} 枚積載`; if (eurOver > 0) detailText += ` (+${eurOver}枚オーバー)`; detailText += '\n'; }
 if (vmfN > 0) { detailText += `VMF: ${vmfPlaced}/${vmfN} 枚積載`; if (vmfOver > 0) detailText += ` (+${vmfOver}枚オーバー)`; detailText += '\n'; }
@@ -1001,7 +1011,7 @@ detail.style.display = 'block';
 detail.textContent = detailText.trimEnd();
 
 // オーバーフローキャンバス
-const ovWrap = document.getElementById('overflow-wrapper');
+const ovWrap = dom('overflow-wrapper');
 if (overflowPallets.length > 0) {
   ovWrap.style.display = 'block';
   renderOverflow();
@@ -1148,8 +1158,7 @@ return {
 // ─────────────────────────────────────────
 
 canvas.addEventListener('pointermove', e => {
-  // タッチの場合はホバープレビューなし
-  if (e.pointerType === 'touch') {
+    if (e.pointerType === 'touch') {
     if (draggingIdx === -1) return;
   }
   const { mmX, mmY } = canvasMmPos(e);
@@ -1439,7 +1448,6 @@ if (e.key === 'r' || e.key === 'R') rKeyDown = false;
 });
 
 
-
 ['drag-eur','drag-vmf','drag-gma'].forEach(id => {
 const el = document.getElementById(id);
 el.addEventListener('dragstart', e => {
@@ -1488,8 +1496,7 @@ function setMode(mode) {
 
   // 判別モードへの移行時に3タイプ検出 → ポップアップで2タイプに絞る
   if (mode === 'check' && placedPallets.length > 0) {
-    const counts = {};
-    placedPallets.forEach(p => { counts[p.type] = (counts[p.type] || 0) + 1; });
+    const counts = countPallets(placedPallets);
     const types = Object.keys(counts).filter(t => counts[t] > 0);
     if (types.length >= 3) {
       showTypeSelectPopup(counts, () => setMode('check'));
@@ -1507,28 +1514,27 @@ currentMode = mode;
 ['fill','check','manual'].forEach(m => {
   document.getElementById('panel-' + m).classList.toggle('active', m === mode);
 });
-const ind = document.getElementById('mode-indicator');
+const ind = dom('mode-indicator');
 ind.textContent = t(MODE_CONFIG[mode].indKey);
 ind.id          = 'mode-indicator';
 ind.className   = MODE_CONFIG[mode].tabClass.replace('active-','');
-document.getElementById('canvas-hint').textContent = t(MODE_CONFIG[mode].hintKey);
+dom('canvas-hint').textContent = t(MODE_CONFIG[mode].hintKey);
 canvas.style.cursor = mode === 'manual' ? 'crosshair' : 'default';
 
 // Fill・操作モード → 判別モードへの切り替え時：配置枚数を入力欄に反映
 if (mode === 'check' && (prevMode === 'manual' || prevMode === 'fill') && placedPallets.length > 0) {
-  const eurCount = placedPallets.filter(p => p.type === 'EUR').length;
-  const vmfCount = placedPallets.filter(p => p.type === 'VMF').length;
-  const eurInput = document.getElementById('check-eur');
-  const vmfInput = document.getElementById('check-vmf');
+  const { EUR: eurCount, VMF: vmfCount } = countPallets(placedPallets);
+  const eurInput = dom('check-eur');
+  const vmfInput = dom('check-vmf');
   if (eurInput) eurInput.value = eurCount;
   if (vmfInput) vmfInput.value = vmfCount;
   setTimeout(() => autoCheck(), 0);
 }
 
 // checkモード以外ではoverflow枠とバナーを非表示
-const ovWrap = document.getElementById('overflow-wrapper');
-const banner = document.getElementById('check-banner');
-const detail = document.getElementById('check-result-detail');
+const ovWrap = dom('overflow-wrapper');
+const banner = dom('check-banner');
+const detail = dom('check-result-detail');
 if (mode === 'check') {
   if (overflowPallets.length > 0) ovWrap.style.display = 'block';
 } else {
@@ -1588,8 +1594,8 @@ function showTypeSelectPopup(counts, onConfirm) {
     invalidateOverlapCache();
 
     // 入力欄に反映（選択外タイプは0）
-    const eurInput = document.getElementById('check-eur');
-    const vmfInput = document.getElementById('check-vmf');
+    const eurInput = dom('check-eur');
+    const vmfInput = dom('check-vmf');
     if (eurInput) eurInput.value = selected.includes('EUR') ? (counts['EUR'] || 0) : 0;
     if (vmfInput) vmfInput.value = selected.includes('VMF') ? (counts['VMF'] || 0) : 0;
 
@@ -1706,15 +1712,15 @@ btn.classList.toggle('active', gridEnabled);
 render();
 }
 function resetCheckInputs() {
-const eurInput = document.getElementById('check-eur');
-const vmfInput = document.getElementById('check-vmf');
-const gmaInput = document.getElementById('check-gma');
+const eurInput = dom('check-eur');
+const vmfInput = dom('check-vmf');
+const gmaInput = dom('check-gma');
 if (eurInput) eurInput.value = 0;
 if (vmfInput) vmfInput.value = 0;
 if (gmaInput) gmaInput.value = 0;
-document.getElementById('check-banner').style.display = 'none';
-document.getElementById('check-result-detail').style.display = 'none';
-document.getElementById('overflow-wrapper').style.display = 'none';
+dom('check-banner').style.display = 'none';
+dom('check-result-detail').style.display = 'none';
+dom('overflow-wrapper').style.display = 'none';
 overflowPallets = [];
 }
 
@@ -1742,9 +1748,7 @@ function updateCenterInfo() {
   ciContainer.textContent = cNames[containerType] || containerType;
 
   // パレット枚数
-  const eurN = placedPallets.filter(p => p.type === 'EUR').length;
-  const vmfN = placedPallets.filter(p => p.type === 'VMF').length;
-  const gmaN = placedPallets.filter(p => p.type === 'GMA').length;
+  const { EUR: eurN, VMF: vmfN, GMA: gmaN } = countPallets(placedPallets);
   const parts = [];
   if (eurN > 0) parts.push(`<span class="ci-eur">EUR ${eurN}</span>`);
   if (vmfN > 0) parts.push(`<span class="ci-vmf">VMF ${vmfN}</span>`);
@@ -1759,19 +1763,17 @@ function updateCenterInfo() {
 }
 
 function updateStats() {
-const eurN  = placedPallets.filter(p => p.type === 'EUR').length;
-const vmfN  = placedPallets.filter(p => p.type === 'VMF').length;
-const gmaN  = placedPallets.filter(p => p.type === 'GMA').length;
+const { EUR: eurN, VMF: vmfN, GMA: gmaN } = countPallets(placedPallets);
 const total = placedPallets.length;
 const c = getC();
 const effArea = (c.L - c.reeferOffset) * c.W;
 const usedArea = placedPallets.reduce((s,p) => s + p.w * p.d, 0);
 const pct = Math.min(100, (usedArea / effArea * 100)).toFixed(1);
 
-document.getElementById('stat-eur').textContent = eurN;
-document.getElementById('stat-vmf').textContent = vmfN;
-document.getElementById('stat-gma').textContent = gmaN;
-document.getElementById('stat-total').textContent = total;
+dom('stat-eur').textContent   = eurN;
+dom('stat-vmf').textContent   = vmfN;
+dom('stat-gma').textContent   = gmaN;
+dom('stat-total').textContent = total;
 const pctEl = document.getElementById('stat-pct');
 pctEl.textContent = pct + '%';
 pctEl.className = 'stat-val ' + (pct >= 90 ? 'bad' : pct >= 70 ? 'warn' : 'good');
@@ -1783,7 +1785,7 @@ bar.style.background = pct >= 90 ? 'var(--danger)' : pct >= 70 ? 'var(--accent)'
 document.getElementById('usage-used').textContent      = (usedArea/1e6).toFixed(2) + ' m²';
 document.getElementById('usage-total-area').textContent = (effArea/1e6).toFixed(2) + ' m²';
 
-const list = document.getElementById('placed-list');
+const list = dom('placed-list');
 list.innerHTML = '';
 if (!total) {
   list.innerHTML = `<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px">${t('noPallets')}</div>`;
@@ -1818,13 +1820,10 @@ placedPallets.forEach((p, i) => {
 // 操作モード時：現在の配置状態を判別して check-banner に表示
 function updateManualBanner() {
   if (currentMode !== 'manual') return;
-  const banner = document.getElementById('check-banner');
+  const banner = dom('check-banner');
   if (!banner) return;
 
-  const eurN = placedPallets.filter(p => p.type === 'EUR').length;
-  const vmfN = placedPallets.filter(p => p.type === 'VMF').length;
-  const gmaN = placedPallets.filter(p => p.type === 'GMA').length;
-
+  const { EUR: eurN, VMF: vmfN, GMA: gmaN } = countPallets(placedPallets);
   if (eurN === 0 && vmfN === 0 && gmaN === 0) {
     banner.style.display = 'none';
     return;
@@ -1838,8 +1837,7 @@ function updateManualBanner() {
       || (p.x + p.d) > c.L || (p.y + p.w) > c.W;
   });
   if (hasError) {
-    banner.style.cssText = 'display:block;padding:6px 20px;border-radius:8px;font-size:13px;font-family:JetBrains Mono,monospace;font-weight:600;border:1px solid var(--danger);background:rgba(224,82,82,0.12);color:var(--danger);white-space:pre;line-height:1.7;text-align:center;';
-    banner.textContent = '⚠ 重複または範囲外のパレットがあります';
+    setBanner(false, '⚠ 重複または範囲外のパレットがあります');
     return;
   }
 
@@ -1852,15 +1850,13 @@ function updateManualBanner() {
   if (gmaN > 0) parts.push(`GMA ${gmaN}枚`);
 
   if (isOk) {
-    banner.style.cssText = 'display:block;padding:6px 20px;border-radius:8px;font-size:13px;font-family:JetBrains Mono,monospace;font-weight:600;border:1px solid var(--eur-fill);background:rgba(46,204,113,0.12);color:var(--eur-fill);white-space:pre;line-height:1.7;text-align:center;';
-    banner.textContent = `✓ 積載可能　${parts.join('　')}`;
+    setBanner(true, `✓ 積載可能　${parts.join('　')}`);
   } else {
     const overText = [];
     if (result.eurOver > 0) overText.push(`EUR ${result.eurOver}枚オーバー`);
     if (result.vmfOver > 0) overText.push(`VMF ${result.vmfOver}枚オーバー`);
     if ((result.gmaOver || 0) > 0) overText.push(`GMA ${result.gmaOver}枚オーバー`);
-    banner.style.cssText = 'display:block;padding:6px 20px;border-radius:8px;font-size:13px;font-family:JetBrains Mono,monospace;font-weight:600;border:1px solid var(--danger);background:rgba(224,82,82,0.12);color:var(--danger);white-space:pre;line-height:1.7;text-align:center;';
-    banner.textContent = `✗ 積載不可　${overText.join(' / ')}\n${parts.join('　')}`;
+    setBanner(false, `✗ 積載不可　${overText.join(' / ')}\n${parts.join('　')}`);
   }
 }
 
@@ -1946,10 +1942,10 @@ if (hasError) {
   }
 }
 
-// 注釈テキスト（現在の言語から取得）
-const disclaimer = [t('noticeTitle'), ...t('noticeLines')];
+// 注釈テキスト（現在の言語から取得）はdoCopy内で参照
 
 function doCopy() {
+const disclaimer = [t('noticeTitle'), ...t('noticeLines')];
 
 // オフスクリーンcanvasを生成（メインcanvas + 下部余白＋注釈）
 function buildExportCanvas() {
@@ -2003,9 +1999,7 @@ function buildExportCanvas() {
   }[containerType] || containerType;
 
   // 統計情報の計算
-  const eurN  = placedPallets.filter(p => p.type === 'EUR').length;
-  const vmfN  = placedPallets.filter(p => p.type === 'VMF').length;
-  const gmaN  = placedPallets.filter(p => p.type === 'GMA').length;
+  const { EUR: eurN, VMF: vmfN, GMA: gmaN } = countPallets(placedPallets);
   const totalN = placedPallets.length;
   const c = getC();
   const effArea  = (c.L - c.reeferOffset) * c.W;

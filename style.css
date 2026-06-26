@@ -66,7 +66,6 @@
   .orient-btn button.active-gma { background: var(--gma-dark); color: var(--gma-fill); border-color: var(--gma-fill); }
 
   /* Fill button */
-  .fill-section { display: flex; flex-direction: column; gap: 7px; }
   .fill-type-row { display: flex; gap: 5px; }
   .fill-type-btn { flex: 1; padding: 5px 0; border-radius: 4px; border: 1px solid var(--border); background: var(--panel2); color: var(--muted); font-size: 11px; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all .15s; }
   .fill-type-btn.sel-eur { background: var(--eur-dark); color: var(--eur-fill); border-color: var(--eur-fill); }
@@ -132,7 +131,6 @@
   .placed-item .pi-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; }
   .placed-item .pi-del:hover { color: var(--danger); }
 
-
   /* ── Mode Tabs ── */
   .mode-tabs { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
   .mode-tab {
@@ -165,10 +163,6 @@
   #mode-indicator.manual { background: rgba(58,159,232,0.12); color: var(--vmf-fill);  border-color: rgba(58,159,232,0.3); }
 
   /* ── Hold panel ── */
-  .hold-panel {
-    background: rgba(240,180,41,0.08); border: 1px solid rgba(240,180,41,0.3);
-    border-radius: 8px; padding: 14px 12px; text-align: center;
-  }
   .hold-panel .hold-icon { font-size: 28px; margin-bottom: 8px; }
   .hold-panel .hold-title { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
   .hold-panel .hold-desc { font-size: 11px; color: var(--muted); line-height: 1.6; }
