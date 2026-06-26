@@ -1721,103 +1721,60 @@ updateHoldBanner();
 init();
 
 // ─────────────────────────────────────────
-//  MOBILE BOTTOM SHEET
+//  MOBILE DRAWER
 // ─────────────────────────────────────────
 (function() {
-  const sheet   = document.getElementById('left-panel');
-  const overlay = document.getElementById('sheet-overlay');
-  const fab     = document.getElementById('sheet-fab');
-  const handle  = document.getElementById('sheet-handle');
-  if (!sheet || !handle) return;
+  const leftPanel  = document.getElementById('left-panel');
+  const rightPanel = document.getElementById('right-panel');
+  const overlay    = document.getElementById('drawer-overlay');
+  const btnLeft    = document.getElementById('btn-left-drawer');
+  const btnRight   = document.getElementById('btn-right-drawer');
+  if (!leftPanel || !rightPanel) return;
 
-  let sheetOpen  = false;
-  let dragStartY = 0;
-  let dragStartT = 0;
-  let currentTranslateY = 0;
+  function isMobile() { return window.innerWidth <= 1023; }
 
-  function isMobile() { return window.innerWidth <= 767; }
-
-  function getClosedY() {
-    return sheet.offsetHeight - 52; // ハンドル分だけ見える
+  // ハンバーガーボタンの表示切替
+  function updateBtnVisibility() {
+    const m = isMobile();
+    if (btnLeft)  btnLeft.style.display  = m ? 'flex' : 'none';
+    if (btnRight) btnRight.style.display = m ? 'flex' : 'none';
   }
 
-  function applyTranslate(y, instant = false) {
-    if (instant) sheet.classList.add('sheet-dragging');
-    else         sheet.classList.remove('sheet-dragging');
-    sheet.style.transform = `translateY(${y}px)`;
-    currentTranslateY = y;
-  }
-
-  window.toggleSheet = function() {
-    if (!isMobile()) return;
-    sheetOpen ? closeSheet() : openSheet();
-  };
-
-  window.openSheet = function() {
-    sheetOpen = true;
-    sheet.classList.add('sheet-open');
-    sheet.classList.remove('sheet-dragging');
-    sheet.style.transform = '';
-    overlay.classList.add('visible');
-    fab.classList.add('open');
-    fab.setAttribute('aria-label', '設定を閉じる');
-  };
-
-  window.closeSheet = function() {
-    sheetOpen = false;
-    sheet.classList.remove('sheet-open');
-    sheet.classList.remove('sheet-dragging');
-    sheet.style.transform = '';
-    overlay.classList.remove('visible');
-    fab.classList.remove('open');
-    fab.setAttribute('aria-label', '設定を開く');
-  };
-
-  // ドラッグ操作（ハンドルをスワイプ）
-  handle.addEventListener('pointerdown', e => {
-    if (!isMobile()) return;
-    dragStartY = e.clientY;
-    dragStartT = Date.now();
-    currentTranslateY = sheetOpen ? 0 : getClosedY();
-    handle.setPointerCapture(e.pointerId);
-    sheet.classList.add('sheet-dragging');
-    e.preventDefault();
-  });
-
-  handle.addEventListener('pointermove', e => {
-    if (!isMobile() || !handle.hasPointerCapture(e.pointerId)) return;
-    const dy = e.clientY - dragStartY;
-    const newY = Math.max(0, Math.min(getClosedY(), currentTranslateY + dy));
-    applyTranslate(newY, true);
-  });
-
-  handle.addEventListener('pointerup', e => {
-    if (!isMobile() || !handle.hasPointerCapture(e.pointerId)) return;
-    sheet.classList.remove('sheet-dragging');
-    const dy      = e.clientY - dragStartY;
-    const dt      = Date.now() - dragStartT;
-    const vel     = dy / dt; // px/ms
-    const halfway = getClosedY() / 2;
-
-    // フリック or 半分以上動いたら切り替え
-    if (vel > 0.5 || (!sheetOpen && dy > halfway) || (sheetOpen && dy > halfway)) {
-      closeSheet();
-    } else if (vel < -0.5 || (!sheetOpen && dy < -halfway) || (sheetOpen && dy < -halfway)) {
-      openSheet();
+  window.openDrawer = function(side) {
+    if (side === 'left') {
+      leftPanel.classList.add('drawer-open');
+      rightPanel.classList.remove('drawer-open');
     } else {
-      sheetOpen ? openSheet() : closeSheet();
+      rightPanel.classList.add('drawer-open');
+      leftPanel.classList.remove('drawer-open');
     }
-    handle.releasePointerCapture(e.pointerId);
+    overlay.classList.add('visible');
+  };
+
+  window.closeDrawers = function() {
+    leftPanel.classList.remove('drawer-open');
+    rightPanel.classList.remove('drawer-open');
+    overlay.classList.remove('visible');
+  };
+
+  // リサイズ時にドロワーをリセット
+  window.addEventListener('resize', () => {
+    updateBtnVisibility();
+    if (!isMobile()) closeDrawers();
   });
 
-  // リサイズ時にシートをリセット
-  window.addEventListener('resize', () => {
-    if (!isMobile()) {
-      sheet.style.transform = '';
-      sheet.classList.remove('sheet-open', 'sheet-dragging');
-      overlay.classList.remove('visible');
-      fab.classList.remove('open');
-      sheetOpen = false;
-    }
-  });
+  // ドロワー内でのリンク・ボタン操作後に閉じる（オプション）
+  // 判別・Fill実行後は閉じる
+  const origRunCheck      = window.runCheck;
+  const origFillContainer = window.fillContainer;
+  window.runCheck = function() {
+    origRunCheck && origRunCheck();
+    if (isMobile()) closeDrawers();
+  };
+  window.fillContainer = function() {
+    origFillContainer && origFillContainer();
+    if (isMobile()) closeDrawers();
+  };
+
+  updateBtnVisibility();
 })();
