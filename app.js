@@ -715,22 +715,14 @@ const W      = c.W;
 const EUR    = PALLETS['EUR'];
 const VMF    = PALLETS['VMF'];
 
-// 残り枚数（ミュータブルなカウンター）
-let eurLeft = eurNeeded;
-let vmfLeft = vmfNeeded;
-
 const placed = [];
 let palId = 1;
-let currentY = 0;  // 現在の棚のY開始位置
 
-// 棚を1つ作る：primaryタイプを先に詰め、余りにsecondaryを詰める
-// 両向き（H/V）を試して多い方を採用
-function buildShelf(primaryType, primaryLeft, secondaryType, secondaryLeft, shelfY) {
+// 棚を1つ作る（fromBottom=trueで下端から配置）
+function buildShelf(primaryType, primaryLeft, secondaryType, secondaryLeft, offsetY, fromBottom) {
   const primP = PALLETS[primaryType];
   const secP  = PALLETS[secondaryType];
   const shelfPallets = [];
-
-  // primary の向き選択（幅に収まりかつ長さ方向に最も多く詰まる）
   let primDim = null;
   const cands = [
     { w: primP.long, d: primP.short, orient: 'H' },
@@ -738,87 +730,88 @@ function buildShelf(primaryType, primaryLeft, secondaryType, secondaryLeft, shel
   ];
   let bestCount = 0;
   for (const cand of cands) {
-    if (shelfY + cand.w > W) continue; // 幅オーバー
+    if (cand.w > (W - offsetY)) continue;
     const cnt = Math.floor(availL / cand.d);
     if (cnt > bestCount) { bestCount = cnt; primDim = cand; }
   }
   if (!primDim || bestCount === 0 || primaryLeft === 0) return null;
-
-  const shelfH = primDim.w; // この棚の高さ（幅方向）
-
-  // primary を詰める
+  const shelfH  = primDim.w;
+  // fromBottom=true → 下端から offsetY 分だけ内側
+  const actualY = fromBottom ? (W - offsetY - shelfH) : offsetY;
   let x = startX;
   const primCount = Math.min(primaryLeft, Math.floor(availL / primDim.d));
   for (let i = 0; i < primCount; i++) {
     shelfPallets.push({ type: primaryType, orient: primDim.orient,
-      x, y: shelfY, w: primDim.w, d: primDim.d });
+      x, y: actualY, w: shelfH, d: primDim.d });
     x += primDim.d;
   }
-
-  // 余りスペースに secondary を詰める
   const remaining = startX + availL - x;
   if (remaining > 0 && secondaryLeft > 0) {
-    // secondary の向き選択（棚高さに収まるもの）
     const secCands = [
       { w: secP.long,  d: secP.short, orient: 'H' },
       { w: secP.short, d: secP.long,  orient: 'V' },
     ];
     for (const sc of secCands) {
-      if (sc.w > shelfH) continue;       // 棚高さを超える
-      if (shelfY + sc.w > W) continue;   // コンテナ幅オーバー
-      if (remaining < sc.d) continue;    // スペースなし
+      if (sc.w > shelfH) continue;
+      if (remaining < sc.d) continue;
       const secCount = Math.min(secondaryLeft, Math.floor(remaining / sc.d));
       for (let i = 0; i < secCount; i++) {
         shelfPallets.push({ type: secondaryType, orient: sc.orient,
-          x, y: shelfY, w: sc.w, d: sc.d });
+          x, y: actualY, w: sc.w, d: sc.d });
         x += sc.d;
       }
-      break; // 1向きで試みたらOK
+      break;
     }
   }
-
-  return { pallets: shelfPallets, shelfH, primCount,
-           secCount: shelfPallets.filter(p => p.type === secondaryType).length };
+  return { pallets: shelfPallets, shelfH };
 }
 
-// 棚を積み上げる（残りスペースがある限り）
-while (currentY < W && (eurLeft > 0 || vmfLeft > 0)) {
-  const remainH = W - currentY;
+// 枚数を上下に半分ずつ割り当て
+const eurTop = Math.ceil(eurNeeded / 2), eurBot = eurNeeded - Math.ceil(eurNeeded / 2);
+const vmfTop = Math.ceil(vmfNeeded / 2), vmfBot = vmfNeeded - Math.ceil(vmfNeeded / 2);
 
-  // primary候補の最小幅チェック
-  const eurCanFit = eurLeft > 0 && (remainH >= EUR.long || remainH >= EUR.short);
-  const vmfCanFit = vmfLeft > 0 && (remainH >= VMF.long || remainH >= VMF.short);
+let eurLeftTop = eurTop, vmfLeftTop = vmfTop;
+let eurLeftBot = eurBot, vmfLeftBot = vmfBot;
+let topY = 0, bottomY = 0;
+
+// 上グループ（上端から積む）
+while (topY + bottomY < W && (eurLeftTop > 0 || vmfLeftTop > 0)) {
+  const remainH = W - topY - bottomY;
+  const eurCanFit = eurLeftTop > 0 && (remainH >= EUR.short);
+  const vmfCanFit = vmfLeftTop > 0 && (remainH >= VMF.short);
   if (!eurCanFit && !vmfCanFit) break;
-
-  // どちらをprimaryにするか：残り枚数が多い方を先に、同数なら面積が大きい方
-  let primaryType, secondaryType;
-  if (!eurCanFit) { primaryType = 'VMF'; secondaryType = 'EUR'; }
-  else if (!vmfCanFit) { primaryType = 'EUR'; secondaryType = 'VMF'; }
-  else {
-    // 両方入る → 残り枚数が多い方をprimary
-    primaryType   = eurLeft >= vmfLeft ? 'EUR' : 'VMF';
-    secondaryType = primaryType === 'EUR' ? 'VMF' : 'EUR';
-  }
-
-  const primLeft = primaryType === 'EUR' ? eurLeft : vmfLeft;
-  const secLeft  = secondaryType === 'EUR' ? eurLeft : vmfLeft;
-
-  const shelf = buildShelf(primaryType, primLeft, secondaryType, secLeft, currentY);
+  let pt = eurLeftTop >= vmfLeftTop ? 'EUR' : 'VMF';
+  let st = pt === 'EUR' ? 'VMF' : 'EUR';
+  if (!eurCanFit) { pt = 'VMF'; st = 'EUR'; }
+  if (!vmfCanFit) { pt = 'EUR'; st = 'VMF'; }
+  const shelf = buildShelf(pt, pt==='EUR'?eurLeftTop:vmfLeftTop, st, st==='EUR'?eurLeftTop:vmfLeftTop, topY, false);
   if (!shelf || shelf.pallets.length === 0) break;
-
-  // 棚に追加
   shelf.pallets.forEach(p => placed.push({ ...p, id: palId++ }));
-
-  // カウント更新
-  eurLeft -= shelf.pallets.filter(p => p.type === 'EUR').length;
-  vmfLeft -= shelf.pallets.filter(p => p.type === 'VMF').length;
-
-  currentY += shelf.shelfH;
+  eurLeftTop -= shelf.pallets.filter(p => p.type === 'EUR').length;
+  vmfLeftTop -= shelf.pallets.filter(p => p.type === 'VMF').length;
+  topY += shelf.shelfH;
 }
 
-// オーバー分を計算
-const eurOver = Math.max(0, eurLeft);
-const vmfOver = Math.max(0, vmfLeft);
+// 下グループ（下端から積む）
+while (topY + bottomY < W && (eurLeftBot > 0 || vmfLeftBot > 0)) {
+  const remainH = W - topY - bottomY;
+  const eurCanFit = eurLeftBot > 0 && (remainH >= EUR.short);
+  const vmfCanFit = vmfLeftBot > 0 && (remainH >= VMF.short);
+  if (!eurCanFit && !vmfCanFit) break;
+  let pt = eurLeftBot >= vmfLeftBot ? 'EUR' : 'VMF';
+  let st = pt === 'EUR' ? 'VMF' : 'EUR';
+  if (!eurCanFit) { pt = 'VMF'; st = 'EUR'; }
+  if (!vmfCanFit) { pt = 'EUR'; st = 'VMF'; }
+  const shelf = buildShelf(pt, pt==='EUR'?eurLeftBot:vmfLeftBot, st, st==='EUR'?eurLeftBot:vmfLeftBot, bottomY, true);
+  if (!shelf || shelf.pallets.length === 0) break;
+  shelf.pallets.forEach(p => placed.push({ ...p, id: palId++ }));
+  eurLeftBot -= shelf.pallets.filter(p => p.type === 'EUR').length;
+  vmfLeftBot -= shelf.pallets.filter(p => p.type === 'VMF').length;
+  bottomY += shelf.shelfH;
+}
+
+const eurOver = Math.max(0, eurLeftTop + eurLeftBot);
+const vmfOver = Math.max(0, vmfLeftTop + vmfLeftBot);
 
 // オーバーフロー描画用レイアウト（小さい枚数のタイプを先に表示）
 const overflowPals = [];
@@ -1283,6 +1276,8 @@ manual: { tabClass: 'active-manual', indKey: 'modeIndicatorManual', hintKey: 'hi
 };
 
 function setMode(mode) {
+  // モバイル（1023px以下）では操作モードを無効化
+  if (mode === 'manual' && window.innerWidth <= 1023) return;
 const prevMode = currentMode;
 currentMode = mode;
 

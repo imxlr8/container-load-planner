@@ -272,4 +272,11 @@
     /* キャンバスラベルを小さく */
     #lbl-top, #lbl-left, #lbl-door { font-size: 8px; }
     #canvas-hint { font-size: 10px; padding: 2px 8px; }
+
+    /* 操作モードタブを無効化 */
+    #tab-manual {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
   }
