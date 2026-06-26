@@ -326,6 +326,7 @@ let fillType         = 'EUR';
 let orientations     = { EUR: 'H', VMF: 'H', GMA: 'H' };
 let placedPallets    = [];
 let selectedIdx      = -1;
+let selectedIndices  = new Set(); // 複数選択用
 let snapEnabled      = true;
 let gridEnabled      = true;
 let dragType         = null;
@@ -361,6 +362,8 @@ let isOverCanvas     = false;
 let draggingIdx      = -1;
 let dragOffsetX      = 0;
 let dragOffsetY      = 0;
+let multiDragOffsets = []; // 複数選択ドラッグ時の各パレットのオフセット [{idx, ox, oy}]
+let pointerHandledByDown = false; // pointerdownで選択処理済みフラグ
 
 const canvas = document.getElementById('main-canvas');
 const ctx    = canvas.getContext('2d');
@@ -512,11 +515,12 @@ if (gridEnabled) {
 // p.d = size along length → drawn as canvas width (fillRect 3rd arg)
 // p.w = size along width  → drawn as canvas height (fillRect 4th arg)
 placedPallets.forEach((p, i) => {
-  const px    = p.x * scale;    // canvas x
-  const py    = p.y * scale;    // canvas y
-  const pd_px = p.d * scale;    // canvas width  (length direction)
-  const pw_px = p.w * scale;    // canvas height (width direction)
-  const isSel     = i === selectedIdx;
+  const px    = p.x * scale;
+  const py    = p.y * scale;
+  const pd_px = p.d * scale;
+  const pw_px = p.w * scale;
+  const isSel     = selectedIndices.has(i);
+  const isMulti   = isSel && selectedIndices.size > 1;
   const isOverlap = checkOverlap(p, i);
   const outOfBounds = p.x < 0 || p.y < 0 || (p.x + p.d) > c.L || (p.y + p.w) > c.W;
   const pal = PALLETS[p.type];
@@ -532,8 +536,9 @@ placedPallets.forEach((p, i) => {
     ctx.moveTo(px+pd_px,py); ctx.lineTo(px,py+pw_px); ctx.stroke();
   }
 
-  ctx.strokeStyle = bad ? '#E05252' : (isSel ? '#fff' : pal.color);
-  ctx.lineWidth = isSel ? 1.8 : 0.8;
+  // 複数選択中は水色の枠、単一選択は白枠
+  ctx.strokeStyle = bad ? '#E05252' : isSel ? (isMulti ? '#00C9B1' : '#fff') : pal.color;
+  ctx.lineWidth = isSel ? 2.0 : 0.8;
   ctx.strokeRect(px, py, pd_px, pw_px);
 
   const fs = Math.max(7, Math.min(pd_px, pw_px) * 0.17);
@@ -555,7 +560,7 @@ placedPallets.forEach((p, i) => {
   ctx.fillText(`#${String(p.id).padStart(2,'0')}`, px + 3, py + 2);
 
   if (isSel) {
-    ctx.strokeStyle = '#fff';
+    ctx.strokeStyle = isMulti ? '#00C9B1' : '#fff';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([4,3]);
     ctx.strokeRect(px-2, py-2, pd_px+4, pw_px+4);
@@ -707,141 +712,252 @@ return !p || p[pType] === 'hold';
 // 各棚はある高さ（幅方向サイズ）を持ち、長さ方向にパレットを詰める。
 // 棚の残り長さに別タイプを詰めることで余りスペースを最大活用する。
 // 返り値: { placed: [...], overflow: [...], eurOver, vmfOver }
-function greedyPack(eurNeeded, vmfNeeded) {
+function greedyPack(eurNeeded, vmfNeeded, gmaN) {
 const c      = getC();
 const startX = loadableStartX();
 const availL = c.L - startX;
 const W      = c.W;
 const EUR    = PALLETS['EUR'];
 const VMF    = PALLETS['VMF'];
+const GMA    = PALLETS['GMA'];
+const gmaNeeded = gmaN || 0;
 
-const placed = [];
-let palId = 1;
+// ── ステップ1：面積チェック ──
+const containerArea = availL * W;
+const palletArea    = eurNeeded * EUR.long * EUR.short
+                    + vmfNeeded * VMF.long * VMF.short
+                    + gmaNeeded * GMA.long * GMA.short;
+if (palletArea > containerArea) {
+  const overflowPals = [];
+  let palId = 1;
+  for (let i = 0; i < eurNeeded; i++)
+    overflowPals.push({ id: palId++, type: 'EUR', orient: 'H',
+      x: i * (EUR.short + 10), y: 0, w: EUR.long, d: EUR.short });
+  for (let i = 0; i < vmfNeeded; i++)
+    overflowPals.push({ id: palId++, type: 'VMF', orient: 'H',
+      x: i * (VMF.short + 10), y: EUR.long + 20, w: VMF.long, d: VMF.short });
+  for (let i = 0; i < gmaNeeded; i++)
+    overflowPals.push({ id: palId++, type: 'GMA', orient: 'H',
+      x: i * (GMA.short + 10), y: EUR.long + VMF.long + 40, w: GMA.long, d: GMA.short });
+  return { placed: [], overflow: overflowPals,
+    eurOver: eurNeeded, vmfOver: vmfNeeded, gmaOver: gmaNeeded };
+}
 
-// 棚を1つ作る（fromBottom=trueで下端から配置）
-function buildShelf(primaryType, primaryLeft, secondaryType, secondaryLeft, offsetY, fromBottom) {
-  const primP = PALLETS[primaryType];
-  const secP  = PALLETS[secondaryType];
-  const shelfPallets = [];
-  let primDim = null;
-  const cands = [
-    { w: primP.long, d: primP.short, orient: 'H' },
-    { w: primP.short, d: primP.long,  orient: 'V' },
-  ];
-  let bestCount = 0;
-  for (const cand of cands) {
-    if (cand.w > (W - offsetY)) continue;
-    const cnt = Math.floor(availL / cand.d);
-    if (cnt > bestCount) { bestCount = cnt; primDim = cand; }
-  }
-  if (!primDim || bestCount === 0 || primaryLeft === 0) return null;
-  const shelfH  = primDim.w;
-  // fromBottom=true → 下端から offsetY 分だけ内側
-  const actualY = fromBottom ? (W - offsetY - shelfH) : offsetY;
-  let x = startX;
-  const primCount = Math.min(primaryLeft, Math.floor(availL / primDim.d));
-  for (let i = 0; i < primCount; i++) {
-    shelfPallets.push({ type: primaryType, orient: primDim.orient,
-      x, y: actualY, w: shelfH, d: primDim.d });
-    x += primDim.d;
-  }
-  const remaining = startX + availL - x;
-  if (remaining > 0 && secondaryLeft > 0) {
-    const secCands = [
-      { w: secP.long,  d: secP.short, orient: 'H' },
-      { w: secP.short, d: secP.long,  orient: 'V' },
-    ];
-    for (const sc of secCands) {
-      if (sc.w > shelfH) continue;
-      if (remaining < sc.d) continue;
-      const secCount = Math.min(secondaryLeft, Math.floor(remaining / sc.d));
-      for (let i = 0; i < secCount; i++) {
-        shelfPallets.push({ type: secondaryType, orient: sc.orient,
-          x, y: actualY, w: sc.w, d: sc.d });
-        x += sc.d;
+// ── ステップ2：配置判定 ──
+// 行の高さ候補（幅方向）
+// GMA: long=1219, short=1016
+const ROW_HEIGHTS = [1219, 1200, 1016, 1000, 800];
+
+// 指定した行高さで全タイプを混在させて長さ方向に詰める
+function packRow(rowH, eurLeft, vmfLeft, gmaLeft, rowY) {
+  // 各タイプの行高さに収まる向き
+  const allDims = {
+    EUR: [
+      { w: EUR.long,  d: EUR.short, orient: 'H' },
+      { w: EUR.short, d: EUR.long,  orient: 'V' },
+    ].filter(d => d.w <= rowH),
+    VMF: [
+      { w: VMF.long,  d: VMF.short, orient: 'H' },
+      { w: VMF.short, d: VMF.long,  orient: 'V' },
+    ].filter(d => d.w <= rowH),
+    GMA: [
+      { w: GMA.long,  d: GMA.short, orient: 'H' },
+      { w: GMA.short, d: GMA.long,  orient: 'V' },
+    ].filter(d => d.w <= rowH),
+  };
+
+  const lefts = { EUR: eurLeft, VMF: vmfLeft, GMA: gmaLeft };
+  const types  = ['EUR', 'VMF', 'GMA'].filter(t => lefts[t] > 0 && allDims[t].length > 0);
+  if (types.length === 0) return null;
+
+  let bestResult = null;
+
+  // 先行タイプ・後続タイプの全組み合わせを試す
+  for (const firstType of types) {
+    for (const dimA of allDims[firstType]) {
+      const cntA = Math.min(lefts[firstType], Math.floor(availL / dimA.d));
+      if (cntA === 0) continue;
+      const usedX = cntA * dimA.d;
+      const remX  = availL - usedX;
+
+      // 後続タイプなし（1タイプのみ）
+      const counts = { EUR: 0, VMF: 0, GMA: 0 };
+      counts[firstType] = cntA;
+      const pallets1 = [];
+      let tx = startX;
+      for (let i = 0; i < cntA; i++) {
+        pallets1.push({ type: firstType, orient: dimA.orient, x: tx, y: rowY, w: dimA.w, d: dimA.d });
+        tx += dimA.d;
       }
-      break;
+
+      // 残りxに後続タイプを詰める（全タイプ試す）
+      const otherTypes = types.filter(t => t !== firstType);
+      const trySecond = (pallets, tx2, c2) => {
+        const total = Object.values(c2).reduce((s,v)=>s+v,0);
+        if (!bestResult || total > bestResult.total)
+          bestResult = { pallets: [...pallets], counts: {...c2}, total,
+            eurPlaced: c2.EUR, vmfPlaced: c2.VMF, gmaPlaced: c2.GMA };
+
+        for (const secType of otherTypes) {
+          if (c2[secType] >= lefts[secType]) continue;
+          for (const dimB of allDims[secType]) {
+            const remX2 = startX + availL - tx2;
+            if (remX2 < dimB.d) continue;
+            const cntB = Math.min(lefts[secType] - c2[secType], Math.floor(remX2 / dimB.d));
+            if (cntB === 0) continue;
+            const newPallets = [...pallets];
+            let tx3 = tx2;
+            for (let i = 0; i < cntB; i++) {
+              newPallets.push({ type: secType, orient: dimB.orient, x: tx3, y: rowY, w: dimB.w, d: dimB.d });
+              tx3 += dimB.d;
+            }
+            const newC = {...c2, [secType]: c2[secType] + cntB};
+            const tot2 = Object.values(newC).reduce((s,v)=>s+v,0);
+            if (!bestResult || tot2 > bestResult.total)
+              bestResult = { pallets: newPallets, counts: newC, total: tot2,
+                eurPlaced: newC.EUR, vmfPlaced: newC.VMF, gmaPlaced: newC.GMA };
+          }
+        }
+      };
+      trySecond(pallets1, tx, {...counts});
     }
   }
-  return { pallets: shelfPallets, shelfH };
+
+  if (!bestResult || bestResult.total === 0) return null;
+  return bestResult;
 }
 
-// 枚数を上下に半分ずつ割り当て
-const eurTop = Math.ceil(eurNeeded / 2), eurBot = eurNeeded - Math.ceil(eurNeeded / 2);
-const vmfTop = Math.ceil(vmfNeeded / 2), vmfBot = vmfNeeded - Math.ceil(vmfNeeded / 2);
+// ── 上端・下端からの行積み上げを全パターン試す ──
+function tryLayout(eurNeeded, vmfNeeded, gmaNeeded) {
+  let bestLayout = null;
 
-let eurLeftTop = eurTop, vmfLeftTop = vmfTop;
-let eurLeftBot = eurBot, vmfLeftBot = vmfBot;
-let topY = 0, bottomY = 0;
+  function* genRowSequences(maxH, depth) {
+    yield [];
+    if (depth === 0 || maxH <= 0) return;
+    for (const h of ROW_HEIGHTS) {
+      if (h > maxH) continue;
+      for (const rest of genRowSequences(maxH - h, depth - 1)) {
+        yield [h, ...rest];
+      }
+    }
+  }
 
-// 上グループ（上端から積む）
-while (topY + bottomY < W && (eurLeftTop > 0 || vmfLeftTop > 0)) {
-  const remainH = W - topY - bottomY;
-  const eurCanFit = eurLeftTop > 0 && (remainH >= EUR.short);
-  const vmfCanFit = vmfLeftTop > 0 && (remainH >= VMF.short);
-  if (!eurCanFit && !vmfCanFit) break;
-  let pt = eurLeftTop >= vmfLeftTop ? 'EUR' : 'VMF';
-  let st = pt === 'EUR' ? 'VMF' : 'EUR';
-  if (!eurCanFit) { pt = 'VMF'; st = 'EUR'; }
-  if (!vmfCanFit) { pt = 'EUR'; st = 'VMF'; }
-  const shelf = buildShelf(pt, pt==='EUR'?eurLeftTop:vmfLeftTop, st, st==='EUR'?eurLeftTop:vmfLeftTop, topY, false);
-  if (!shelf || shelf.pallets.length === 0) break;
-  shelf.pallets.forEach(p => placed.push({ ...p, id: palId++ }));
-  eurLeftTop -= shelf.pallets.filter(p => p.type === 'EUR').length;
-  vmfLeftTop -= shelf.pallets.filter(p => p.type === 'VMF').length;
-  topY += shelf.shelfH;
+  for (const topRows of genRowSequences(W, 3)) {
+    const topH = topRows.reduce((s, h) => s + h, 0);
+    for (const botRows of genRowSequences(W - topH, 3)) {
+      const botH = botRows.reduce((s, h) => s + h, 0);
+      if (topH + botH > W) continue;
+
+      let eurLeft = eurNeeded, vmfLeft = vmfNeeded, gmaLeft = gmaNeeded;
+      const allPallets = [];
+      let valid = true;
+
+      // 上端行
+      let curY = 0;
+      for (const rowH of topRows) {
+        const result = packRow(rowH, eurLeft, vmfLeft, gmaLeft, curY);
+        if (!result || result.total === 0) { valid = false; break; }
+        allPallets.push(...result.pallets);
+        eurLeft -= result.eurPlaced;
+        vmfLeft -= result.vmfPlaced;
+        gmaLeft -= result.gmaPlaced;
+        curY += rowH;
+        if (eurLeft <= 0 && vmfLeft <= 0 && gmaLeft <= 0) break;
+      }
+      if (!valid) continue;
+
+      if (eurLeft <= 0 && vmfLeft <= 0 && gmaLeft <= 0) {
+        const topOnly = botRows.length === 0;
+        const score   = 100000 + (topOnly ? 10000 : 0) + allPallets.length;
+        if (!bestLayout || score > bestLayout.score) {
+          bestLayout = { pallets: allPallets, eurOver: 0, vmfOver: 0, gmaOver: 0, score };
+        }
+        continue;
+      }
+
+      // 下端行
+      let curBot = 0;
+      for (const rowH of botRows) {
+        const rowY = W - curBot - rowH;
+        if (rowY < curY) { valid = false; break; }
+        const result = packRow(rowH, eurLeft, vmfLeft, gmaLeft, rowY);
+        if (!result || result.total === 0) { valid = false; break; }
+        allPallets.push(...result.pallets);
+        eurLeft -= result.eurPlaced;
+        vmfLeft -= result.vmfPlaced;
+        gmaLeft -= result.gmaPlaced;
+        curBot += rowH;
+        if (eurLeft <= 0 && vmfLeft <= 0 && gmaLeft <= 0) break;
+      }
+      if (!valid) continue;
+
+      const eurO  = Math.max(0, eurLeft);
+      const vmfO  = Math.max(0, vmfLeft);
+      const gmaO  = Math.max(0, gmaLeft);
+      const allIn = eurO === 0 && vmfO === 0 && gmaO === 0;
+      const topOnly = botRows.length === 0 || curBot === 0;
+      const score   = (allIn ? 100000 : 0) + (topOnly ? 10000 : 0) + allPallets.length;
+
+      if (!bestLayout || score > bestLayout.score) {
+        bestLayout = { pallets: allPallets, eurOver: eurO, vmfOver: vmfO, gmaOver: gmaO, score };
+      }
+    }
+  }
+  return bestLayout;
 }
 
-// 下グループ（下端から積む）
-while (topY + bottomY < W && (eurLeftBot > 0 || vmfLeftBot > 0)) {
-  const remainH = W - topY - bottomY;
-  const eurCanFit = eurLeftBot > 0 && (remainH >= EUR.short);
-  const vmfCanFit = vmfLeftBot > 0 && (remainH >= VMF.short);
-  if (!eurCanFit && !vmfCanFit) break;
-  let pt = eurLeftBot >= vmfLeftBot ? 'EUR' : 'VMF';
-  let st = pt === 'EUR' ? 'VMF' : 'EUR';
-  if (!eurCanFit) { pt = 'VMF'; st = 'EUR'; }
-  if (!vmfCanFit) { pt = 'EUR'; st = 'VMF'; }
-  const shelf = buildShelf(pt, pt==='EUR'?eurLeftBot:vmfLeftBot, st, st==='EUR'?eurLeftBot:vmfLeftBot, bottomY, true);
-  if (!shelf || shelf.pallets.length === 0) break;
-  shelf.pallets.forEach(p => placed.push({ ...p, id: palId++ }));
-  eurLeftBot -= shelf.pallets.filter(p => p.type === 'EUR').length;
-  vmfLeftBot -= shelf.pallets.filter(p => p.type === 'VMF').length;
-  bottomY += shelf.shelfH;
-}
+const layout = tryLayout(eurNeeded, vmfNeeded, gmaNeeded);
+let palId = 1;
+const placed = layout
+  ? layout.pallets.map(p => ({ ...p, id: palId++ }))
+  : [];
 
-const eurOver = Math.max(0, eurLeftTop + eurLeftBot);
-const vmfOver = Math.max(0, vmfLeftTop + vmfLeftBot);
+const eurOver = layout ? layout.eurOver : eurNeeded;
+const vmfOver = layout ? layout.vmfOver : vmfNeeded;
+const gmaOver = layout ? (layout.gmaOver || 0) : gmaNeeded;
 
-// オーバーフロー描画用レイアウト（小さい枚数のタイプを先に表示）
+// オーバーフロー描画
 const overflowPals = [];
-const ovTypes = eurOver <= vmfOver
-  ? [['EUR', eurOver], ['VMF', vmfOver]]
-  : [['VMF', vmfOver], ['EUR', eurOver]];
-
+const ovEntries = [['EUR', eurOver], ['VMF', vmfOver], ['GMA', gmaOver]]
+  .filter(([,n]) => n > 0)
+  .sort(([,a],[,b]) => a - b);
 let ovY = 0;
-for (const [type, count] of ovTypes) {
-  if (count === 0) continue;
+for (const [type, count] of ovEntries) {
   const P = PALLETS[type];
-  const dim = { w: P.long, d: P.short };
   for (let i = 0; i < count; i++) {
     overflowPals.push({ id: palId++, type, orient: 'H',
-      x: i * (dim.d + 10), y: ovY, w: dim.w, d: dim.d });
+      x: i * (P.short + 10), y: ovY, w: P.long, d: P.short });
   }
-  ovY += dim.w + 20;
+  ovY += P.long + 20;
 }
 
-return { placed, overflow: overflowPals, eurOver, vmfOver };
+return { placed, overflow: overflowPals, eurOver, vmfOver, gmaOver };
+}
+
+// 入力変化時の自動判別（EUR・VMFどちらかが1枚以上の時のみ実行）
+function autoCheck() {
+  // 0枚でもrunCheckを呼ぶ（描画リセットのため）
+  runCheck();
 }
 
 function runCheck() {
 const eurN = Math.max(0, parseInt(document.getElementById('check-eur').value) || 0);
 const vmfN = Math.max(0, parseInt(document.getElementById('check-vmf').value) || 0);
+const gmaN = Math.max(0, parseInt(document.getElementById('check-gma').value) || 0);
 
-if (eurN === 0 && vmfN === 0) return;
+// 全部0枚の場合はキャンバスとバナーをリセット
+if (eurN === 0 && vmfN === 0 && gmaN === 0) {
+  placedPallets = []; overflowPallets = []; selectedIdx = -1; overflowSelectedIdx = -1;
+  invalidateOverlapCache();
+  document.getElementById('check-banner').style.display = 'none';
+  document.getElementById('check-result-detail').style.display = 'none';
+  document.getElementById('overflow-wrapper').style.display = 'none';
+  render(); updateStats(); updateCenterInfo();
+  return;
+}
 
 // 判別実行
-const result = greedyPack(eurN, vmfN);
+const result = greedyPack(eurN, vmfN, gmaN);
 placedPallets   = result.placed;
 overflowPallets = result.overflow;
 selectedIdx     = -1;
@@ -851,33 +967,40 @@ invalidateOverlapCache();
 
 const eurPlaced = placedPallets.filter(p=>p.type==='EUR').length;
 const vmfPlaced = placedPallets.filter(p=>p.type==='VMF').length;
+const gmaPlaced = placedPallets.filter(p=>p.type==='GMA').length;
 const eurOver   = result.eurOver || 0;
 const vmfOver   = result.vmfOver || 0;
-const isOk      = eurOver === 0 && vmfOver === 0;
+const gmaOver   = result.gmaOver || 0;
+const isOk      = eurOver === 0 && vmfOver === 0 && gmaOver === 0;
 
-// ── バナー（コンテナ描画エリア上部）──
+// ── バナー ──
 const banner = document.getElementById('check-banner');
+const parts = [];
+if (eurN > 0) parts.push(`EUR ${eurPlaced}枚`);
+if (vmfN > 0) parts.push(`VMF ${vmfPlaced}枚`);
+if (gmaN > 0) parts.push(`GMA ${gmaPlaced}枚`);
 if (isOk) {
   banner.style.cssText = 'display:block;padding:6px 20px;border-radius:8px;font-size:13px;font-family:JetBrains Mono,monospace;font-weight:600;border:1px solid var(--eur-fill);background:rgba(46,204,113,0.12);color:var(--eur-fill);white-space:pre;line-height:1.7;text-align:center;';
-  banner.textContent = `✓ 積載可能　EUR ${eurPlaced}枚　VMF ${vmfPlaced}枚`;
+  banner.textContent = `✓ 積載可能　${parts.join('　')}`;
 } else {
   const overText = [];
   if (eurOver > 0) overText.push(`EUR ${eurOver}枚オーバー`);
   if (vmfOver > 0) overText.push(`VMF ${vmfOver}枚オーバー`);
+  if (gmaOver > 0) overText.push(`GMA ${gmaOver}枚オーバー`);
   banner.style.cssText = 'display:block;padding:6px 20px;border-radius:8px;font-size:13px;font-family:JetBrains Mono,monospace;font-weight:600;border:1px solid var(--danger);background:rgba(224,82,82,0.12);color:var(--danger);white-space:pre;line-height:1.7;text-align:center;';
-  banner.textContent = `✗ 積載不可　${overText.join(' / ')}\nEUR ${eurPlaced}/${eurN}枚　VMF ${vmfPlaced}/${vmfN}枚`;
+  banner.textContent = `✗ 積載不可　${overText.join(' / ')}\n${parts.join('　')} 積載　残り ${overText.join(' ')}`;
 }
 
-// ── 詳細（左パネル）──
+// ── 詳細 ──
 const detail = document.getElementById('check-result-detail');
-let detailText = `EUR: ${eurPlaced}/${eurN} 枚積載`;
-if (eurOver > 0) detailText += ` (+${eurOver}枚オーバー)`;
-detailText += `\nVMF: ${vmfPlaced}/${vmfN} 枚積載`;
-if (vmfOver > 0) detailText += ` (+${vmfOver}枚オーバー)`;
+let detailText = '';
+if (eurN > 0) { detailText += `EUR: ${eurPlaced}/${eurN} 枚積載`; if (eurOver > 0) detailText += ` (+${eurOver}枚オーバー)`; detailText += '\n'; }
+if (vmfN > 0) { detailText += `VMF: ${vmfPlaced}/${vmfN} 枚積載`; if (vmfOver > 0) detailText += ` (+${vmfOver}枚オーバー)`; detailText += '\n'; }
+if (gmaN > 0) { detailText += `GMA: ${gmaPlaced}/${gmaN} 枚積載`; if (gmaOver > 0) detailText += ` (+${gmaOver}枚オーバー)`; }
 detail.style.display = 'block';
-detail.textContent = detailText;
+detail.textContent = detailText.trimEnd();
 
-// オーバーフローキャンバス表示
+// オーバーフローキャンバス
 const ovWrap = document.getElementById('overflow-wrapper');
 if (overflowPallets.length > 0) {
   ovWrap.style.display = 'block';
@@ -886,8 +1009,7 @@ if (overflowPallets.length > 0) {
   ovWrap.style.display = 'none';
 }
 
-render();
-updateStats();
+render(); updateStats(); updateCenterInfo();
 }
 
 // オーバーフローキャンバス描画
@@ -1034,12 +1156,24 @@ canvas.addEventListener('pointermove', e => {
   hoverPos = { mmX, mmY };
 
   if (draggingIdx !== -1) {
-    const p = placedPallets[draggingIdx];
     const c = getC();
-    const rawX = mmX - dragOffsetX;
-    const rawY = mmY - dragOffsetY;
-    p.x = Math.min(Math.max(0, snapTo(rawX, 100)), c.L - p.d);
-    p.y = Math.min(Math.max(0, snapTo(rawY, 100)), c.W - p.w);
+    if (multiDragOffsets.length > 1) {
+      // 複数選択ドラッグ：全パレットを相対位置維持で移動
+      multiDragOffsets.forEach(({ idx, ox, oy }) => {
+        const p = placedPallets[idx];
+        const rawX = mmX - ox;
+        const rawY = mmY - oy;
+        p.x = Math.min(Math.max(0, snapTo(rawX, 100)), c.L - p.d);
+        p.y = Math.min(Math.max(0, snapTo(rawY, 100)), c.W - p.w);
+      });
+    } else {
+      // 単一ドラッグ
+      const p = placedPallets[draggingIdx];
+      const rawX = mmX - dragOffsetX;
+      const rawY = mmY - dragOffsetY;
+      p.x = Math.min(Math.max(0, snapTo(rawX, 100)), c.L - p.d);
+      p.y = Math.min(Math.max(0, snapTo(rawY, 100)), c.W - p.w);
+    }
     invalidateOverlapCache();
   }
 
@@ -1062,24 +1196,68 @@ canvas.addEventListener('pointerdown', e => {
   if (e.button !== 0 && e.pointerType !== 'touch') return;
   if (currentMode !== 'manual') return;
   const { mmX, mmY } = canvasMmPos(e);
+  const isCtrl = e.ctrlKey || e.metaKey;
 
   const hit = placedPallets.findIndex(p =>
     mmX >= p.x && mmX <= p.x + p.d && mmY >= p.y && mmY <= p.y + p.w
   );
   if (hit !== -1) {
-    draggingIdx  = hit;
-    dragOffsetX  = mmX - placedPallets[hit].x;
-    dragOffsetY  = mmY - placedPallets[hit].y;
+    if (isCtrl) {
+      // Ctrl+クリック：複数選択トグル
+      if (selectedIndices.has(hit)) {
+        selectedIndices.delete(hit);
+        if (selectedIdx === hit) selectedIdx = selectedIndices.size > 0 ? [...selectedIndices][0] : -1;
+      } else {
+        selectedIndices.add(hit);
+        selectedIdx = hit;
+      }
+      pointerHandledByDown = true;
+      render(); updateStats();
+      e.preventDefault();
+      return;
+    }
+    // 通常クリック：ヒットしたパレットをドラッグ開始
+    // ヒットしたパレットが複数選択内にある場合→複数まとめてドラッグ
+    if (selectedIndices.size > 1 && selectedIndices.has(hit)) {
+      // 複数ドラッグ
+      draggingIdx = hit;
+      multiDragOffsets = [...selectedIndices].map(idx => ({
+        idx,
+        ox: mmX - placedPallets[idx].x,
+        oy: mmY - placedPallets[idx].y,
+      }));
+    } else {
+      // 単一ドラッグ（複数選択をクリア）
+      selectedIndices.clear();
+      selectedIndices.add(hit);
+      draggingIdx    = hit;
+      multiDragOffsets = [];
+    }
+    dragOffsetX = mmX - placedPallets[hit].x;
+    dragOffsetY = mmY - placedPallets[hit].y;
     canvas.style.cursor = 'grabbing';
-    canvas.setPointerCapture(e.pointerId);  // タッチドラッグで外に出てもキャプチャ
+    canvas.setPointerCapture(e.pointerId);
     e.preventDefault();
     return;
+  }
+
+  // 空白クリック：複数選択クリア（Ctrlなし）
+  if (!isCtrl) {
+    selectedIndices.clear();
+    selectedIdx = -1;
+    render();
   }
 });
 
 // pointerup: ドラッグ確定 or 選択トグル or 新規配置
 canvas.addEventListener('pointerup', e => {
   if (e.button !== 0 && e.pointerType !== 'touch') return;
+
+  // pointerdownでCtrl選択処理済みの場合はスキップ
+  if (pointerHandledByDown) {
+    pointerHandledByDown = false;
+    return;
+  }
 
   if (draggingIdx !== -1) {
     const { mmX, mmY } = canvasMmPos(e);
@@ -1091,9 +1269,18 @@ canvas.addEventListener('pointerup', e => {
       selectedIdx = draggingIdx;
       invalidateOverlapCache();
     } else {
-      selectedIdx = selectedIdx === draggingIdx ? -1 : draggingIdx;
+      // ドラッグなし→単一選択トグル
+      const wasSelected = selectedIdx === draggingIdx && selectedIndices.size <= 1;
+      selectedIndices.clear();
+      if (wasSelected) {
+        selectedIdx = -1;
+      } else {
+        selectedIdx = draggingIdx;
+        selectedIndices.add(draggingIdx);
+      }
     }
     draggingIdx = -1;
+    multiDragOffsets = [];
     canvas.style.cursor = currentMode === 'manual' ? 'crosshair' : 'default';
     render(); updateStats();
     return;
@@ -1106,7 +1293,9 @@ canvas.addEventListener('pointerup', e => {
     mmX >= p.x && mmX <= p.x + p.d && mmY >= p.y && mmY <= p.y + p.w
   );
   if (hit !== -1) {
+    selectedIndices.clear();
     selectedIdx = selectedIdx === hit ? -1 : hit;
+    if (selectedIdx !== -1) selectedIndices.add(selectedIdx);
     render(); updateStats();
     return;
   }
@@ -1119,6 +1308,7 @@ canvas.addEventListener('pointerup', e => {
   pushHistory();
   placedPallets.push({ id: ++idCounter, type: activePalletType, orient, x: sx, y: sy, w, d });
   selectedIdx = -1;
+  selectedIndices.clear();
   invalidateOverlapCache();
   render(); updateStats();
 });
@@ -1152,6 +1342,10 @@ if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
 // Ctrl+Y: redo
 if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
   e.preventDefault(); redo(); return;
+}
+// Ctrl+Shift+C: コピー
+if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+  e.preventDefault(); copyCanvasToClipboard(); return;
 }
 // Rキー: 操作モードのみ・キーリピート抑制
 if (e.key === 'r' || e.key === 'R') {
@@ -1194,7 +1388,7 @@ if (e.key === 'r' || e.key === 'R') {
   return;
 }
 
-if (selectedIdx === -1) return;
+if (selectedIdx === -1 && selectedIndices.size === 0) return;
 
 const step = snapEnabled ? 100 : (e.shiftKey ? 100 : 10);
 
@@ -1216,13 +1410,26 @@ const isDel  = e.key === 'Delete' || e.key === 'Backspace';
 if (!isMove && !isDel) return;
 e.preventDefault();
 pushHistory();
-const p = placedPallets[selectedIdx];
 const c = getC();
+
+const targets = selectedIndices.size > 0
+  ? [...selectedIndices]
+  : (selectedIdx !== -1 ? [selectedIdx] : []);
+
 if (isMove) {
-  p.x = Math.min(Math.max(0, p.x + dx), c.L - p.d);
-  p.y = Math.min(Math.max(0, p.y + dy), c.W - p.w);
+  targets.forEach(idx => {
+    const p = placedPallets[idx];
+    p.x = Math.min(Math.max(0, p.x + dx), c.L - p.d);
+    p.y = Math.min(Math.max(0, p.y + dy), c.W - p.w);
+  });
 }
-if (isDel) { placedPallets.splice(selectedIdx, 1); selectedIdx = -1; }
+if (isDel) {
+  // インデックスを降順で削除（前から消すとずれるため）
+  const sorted = [...targets].sort((a, b) => b - a);
+  sorted.forEach(idx => placedPallets.splice(idx, 1));
+  selectedIdx = -1;
+  selectedIndices.clear();
+}
 invalidateOverlapCache();
 render(); updateStats();
 });
@@ -1278,6 +1485,18 @@ manual: { tabClass: 'active-manual', indKey: 'modeIndicatorManual', hintKey: 'hi
 function setMode(mode) {
   // モバイル（1023px以下）では操作モードを無効化
   if (mode === 'manual' && window.innerWidth <= 1023) return;
+
+  // 判別モードへの移行時に3タイプ検出 → ポップアップで2タイプに絞る
+  if (mode === 'check' && placedPallets.length > 0) {
+    const counts = {};
+    placedPallets.forEach(p => { counts[p.type] = (counts[p.type] || 0) + 1; });
+    const types = Object.keys(counts).filter(t => counts[t] > 0);
+    if (types.length >= 3) {
+      showTypeSelectPopup(counts, () => setMode('check'));
+      return; // ポップアップ確定後に再度setMode('check')が呼ばれる
+    }
+  }
+
 const prevMode = currentMode;
 currentMode = mode;
 
@@ -1301,8 +1520,9 @@ if (mode === 'check' && (prevMode === 'manual' || prevMode === 'fill') && placed
   const vmfCount = placedPallets.filter(p => p.type === 'VMF').length;
   const eurInput = document.getElementById('check-eur');
   const vmfInput = document.getElementById('check-vmf');
-  if (eurInput && eurCount > 0) eurInput.value = eurCount;
-  if (vmfInput && vmfCount > 0) vmfInput.value = vmfCount;
+  if (eurInput) eurInput.value = eurCount;
+  if (vmfInput) vmfInput.value = vmfCount;
+  setTimeout(() => autoCheck(), 0);
 }
 
 // checkモード以外ではoverflow枠とバナーを非表示
@@ -1313,13 +1533,73 @@ if (mode === 'check') {
   if (overflowPallets.length > 0) ovWrap.style.display = 'block';
 } else {
   ovWrap.style.display = 'none';
-  banner.style.display = 'none';
+  if (mode !== 'manual') banner.style.display = 'none'; // 操作モードはバナー維持
   if (detail) detail.style.display = 'none';
-  overflowPallets = [];
-  overflowSelectedIdx = -1;
+  if (mode !== 'manual') { overflowPallets = []; overflowSelectedIdx = -1; }
 }
 
 render();
+}
+
+// 3タイプ検出時：2タイプに絞り込むポップアップ
+function showTypeSelectPopup(counts, onConfirm) {
+  const popup = document.getElementById('type-select-popup');
+  if (!popup) { onConfirm(); return; }
+
+  const types = Object.keys(counts).filter(t => counts[t] > 0);
+  const colors = { EUR: 'var(--eur-fill)', VMF: 'var(--vmf-fill)', GMA: 'var(--gma-fill)' };
+
+  // チェックボックスを初期化（最初の2タイプをデフォルト選択）
+  types.forEach((t, i) => {
+    const cb = document.getElementById('type-sel-' + t.toLowerCase());
+    if (cb) {
+      cb.checked = i < 2;
+      cb.parentElement.querySelector('.type-sel-count').textContent = counts[t] + '枚';
+    }
+  });
+
+  // チェック数が2を超えないよう制御
+  types.forEach(t => {
+    const cb = document.getElementById('type-sel-' + t.toLowerCase());
+    if (!cb) return;
+    cb.onchange = () => {
+      const checked = types.filter(tt => {
+        const c = document.getElementById('type-sel-' + tt.toLowerCase());
+        return c && c.checked;
+      });
+      if (checked.length > 2) cb.checked = false;
+      // OKボタンの有効・無効
+      const ok = document.getElementById('type-select-ok');
+      if (ok) ok.disabled = checked.length < 2;
+    };
+  });
+
+  popup.style.display = 'flex';
+
+  document.getElementById('type-select-ok').onclick = () => {
+    const selected = types.filter(t => {
+      const cb = document.getElementById('type-sel-' + t.toLowerCase());
+      return cb && cb.checked;
+    });
+    popup.style.display = 'none';
+
+    // 選択されなかったタイプをplacedPalletsから除去
+    placedPallets = placedPallets.filter(p => selected.includes(p.type));
+    invalidateOverlapCache();
+
+    // 入力欄に反映（選択外タイプは0）
+    const eurInput = document.getElementById('check-eur');
+    const vmfInput = document.getElementById('check-vmf');
+    if (eurInput) eurInput.value = selected.includes('EUR') ? (counts['EUR'] || 0) : 0;
+    if (vmfInput) vmfInput.value = selected.includes('VMF') ? (counts['VMF'] || 0) : 0;
+
+    onConfirm();
+  };
+
+  document.getElementById('type-select-cancel').onclick = () => {
+    popup.style.display = 'none';
+    // モード切替をキャンセル → 何もしない（現在のモードのまま）
+  };
 }
 
 function toggleGma() {
@@ -1328,6 +1608,10 @@ const icon = document.getElementById('gma-toggle-icon');
 const isOpen = body.style.display !== 'none';
 body.style.display = isOpen ? 'none' : 'block';
 icon.textContent   = isOpen ? '▶' : '▼';
+// GMAを開いたらEUR/VMFの選択状態をクリアしてGMAを選択
+if (!isOpen) {
+  setOrient('GMA', orientations['GMA'] || 'H');
+}
 }
 
 function toggleMoveMode() {
@@ -1360,11 +1644,45 @@ document.getElementById('fill-gma').className = 'fill-type-btn' + (t==='GMA' ? '
 updateHoldBanner();
 }
 
+// コンテナ変更時の「内容が消えます」確認（同セッション内で再表示しない選択可）
+let skipContainerChangeWarning = false;
+
 document.getElementById('container-type').addEventListener('change', e => {
-containerType = e.target.value;
-placedPallets = []; selectedIdx = -1;
-setupCanvas(); updateDimDisplay(); render(); updateStats();
-updateHoldBanner();
+const newType = e.target.value;
+const hasPallets = placedPallets.length > 0 || overflowPallets.length > 0;
+
+const doChange = () => {
+  containerType = newType;
+  placedPallets = []; selectedIdx = -1;
+  overflowPallets = [];
+  resetCheckInputs();
+  setupCanvas(); updateDimDisplay(); render(); updateStats();
+  updateHoldBanner(); updateCenterInfo();
+};
+
+if (hasPallets && !skipContainerChangeWarning) {
+  // インラインポップアップで確認
+  const popup = document.getElementById('container-change-popup');
+  if (popup) {
+    popup.style.display = 'flex';
+    document.getElementById('container-change-ok').onclick = () => {
+      popup.style.display = 'none';
+      if (document.getElementById('container-change-skip').checked) {
+        skipContainerChangeWarning = true;
+      }
+      doChange();
+    };
+    document.getElementById('container-change-cancel').onclick = () => {
+      popup.style.display = 'none';
+      // セレクトを元の値に戻す
+      e.target.value = containerType;
+    };
+  } else {
+    doChange();
+  }
+} else {
+  doChange();
+}
 });
 
 function updateDimDisplay() {
@@ -1387,16 +1705,59 @@ btn.textContent = gridEnabled ? t('gridOn') : t('gridOff');
 btn.classList.toggle('active', gridEnabled);
 render();
 }
+function resetCheckInputs() {
+const eurInput = document.getElementById('check-eur');
+const vmfInput = document.getElementById('check-vmf');
+const gmaInput = document.getElementById('check-gma');
+if (eurInput) eurInput.value = 0;
+if (vmfInput) vmfInput.value = 0;
+if (gmaInput) gmaInput.value = 0;
+document.getElementById('check-banner').style.display = 'none';
+document.getElementById('check-result-detail').style.display = 'none';
+document.getElementById('overflow-wrapper').style.display = 'none';
+overflowPallets = [];
+}
+
 function clearAll() {
 pushHistory();
 placedPallets = []; selectedIdx = -1;
 invalidateOverlapCache();
-render(); updateStats();
+resetCheckInputs();
+render(); updateStats(); updateCenterInfo();
 }
 
 // ─────────────────────────────────────────
 //  STATS
 // ─────────────────────────────────────────
+// ─────────────────────────────────────────
+//  CENTER INFO BAR
+// ─────────────────────────────────────────
+function updateCenterInfo() {
+  const ciContainer = document.getElementById('ci-container');
+  const ciPallets   = document.getElementById('ci-pallets');
+  if (!ciContainer || !ciPallets) return;
+
+  // コンテナ名
+  const cNames = { '20dry':'20ft Dry', '40dry':'40ft Dry', '20ref':'20ft Reefer', '40ref':'40ft Reefer' };
+  ciContainer.textContent = cNames[containerType] || containerType;
+
+  // パレット枚数
+  const eurN = placedPallets.filter(p => p.type === 'EUR').length;
+  const vmfN = placedPallets.filter(p => p.type === 'VMF').length;
+  const gmaN = placedPallets.filter(p => p.type === 'GMA').length;
+  const parts = [];
+  if (eurN > 0) parts.push(`<span class="ci-eur">EUR ${eurN}</span>`);
+  if (vmfN > 0) parts.push(`<span class="ci-vmf">VMF ${vmfN}</span>`);
+  if (gmaN > 0) parts.push(`<span class="ci-gma">GMA ${gmaN}</span>`);
+  ciPallets.innerHTML = parts.length > 0
+    ? parts.join('<span class="ci-sep" style="margin:0 4px;">·</span>')
+    : '<span style="color:var(--muted)">—</span>';
+
+  // セパレータの表示制御
+  const sep = ciContainer.nextElementSibling;
+  if (sep) sep.style.display = parts.length > 0 || eurN + vmfN + gmaN >= 0 ? '' : 'none';
+}
+
 function updateStats() {
 const eurN  = placedPallets.filter(p => p.type === 'EUR').length;
 const vmfN  = placedPallets.filter(p => p.type === 'VMF').length;
@@ -1450,6 +1811,57 @@ placedPallets.forEach((p, i) => {
   });
   list.appendChild(div);
 });
+  updateCenterInfo();
+  updateManualBanner();
+}
+
+// 操作モード時：現在の配置状態を判別して check-banner に表示
+function updateManualBanner() {
+  if (currentMode !== 'manual') return;
+  const banner = document.getElementById('check-banner');
+  if (!banner) return;
+
+  const eurN = placedPallets.filter(p => p.type === 'EUR').length;
+  const vmfN = placedPallets.filter(p => p.type === 'VMF').length;
+  const gmaN = placedPallets.filter(p => p.type === 'GMA').length;
+
+  if (eurN === 0 && vmfN === 0 && gmaN === 0) {
+    banner.style.display = 'none';
+    return;
+  }
+
+  // 重複・範囲外があれば「配置エラー」表示
+  const hasError = placedPallets.some((p, i) => {
+    const c = getC();
+    return checkOverlap(p, i)
+      || p.x < 0 || p.y < 0
+      || (p.x + p.d) > c.L || (p.y + p.w) > c.W;
+  });
+  if (hasError) {
+    banner.style.cssText = 'display:block;padding:6px 20px;border-radius:8px;font-size:13px;font-family:JetBrains Mono,monospace;font-weight:600;border:1px solid var(--danger);background:rgba(224,82,82,0.12);color:var(--danger);white-space:pre;line-height:1.7;text-align:center;';
+    banner.textContent = '⚠ 重複または範囲外のパレットがあります';
+    return;
+  }
+
+  // 判別実行（現在の配置枚数で）
+  const result = greedyPack(eurN, vmfN, gmaN);
+  const isOk   = result.eurOver === 0 && result.vmfOver === 0 && (result.gmaOver || 0) === 0;
+  const parts  = [];
+  if (eurN > 0) parts.push(`EUR ${eurN}枚`);
+  if (vmfN > 0) parts.push(`VMF ${vmfN}枚`);
+  if (gmaN > 0) parts.push(`GMA ${gmaN}枚`);
+
+  if (isOk) {
+    banner.style.cssText = 'display:block;padding:6px 20px;border-radius:8px;font-size:13px;font-family:JetBrains Mono,monospace;font-weight:600;border:1px solid var(--eur-fill);background:rgba(46,204,113,0.12);color:var(--eur-fill);white-space:pre;line-height:1.7;text-align:center;';
+    banner.textContent = `✓ 積載可能　${parts.join('　')}`;
+  } else {
+    const overText = [];
+    if (result.eurOver > 0) overText.push(`EUR ${result.eurOver}枚オーバー`);
+    if (result.vmfOver > 0) overText.push(`VMF ${result.vmfOver}枚オーバー`);
+    if ((result.gmaOver || 0) > 0) overText.push(`GMA ${result.gmaOver}枚オーバー`);
+    banner.style.cssText = 'display:block;padding:6px 20px;border-radius:8px;font-size:13px;font-family:JetBrains Mono,monospace;font-weight:600;border:1px solid var(--danger);background:rgba(224,82,82,0.12);color:var(--danger);white-space:pre;line-height:1.7;text-align:center;';
+    banner.textContent = `✗ 積載不可　${overText.join(' / ')}\n${parts.join('　')}`;
+  }
 }
 
 function removePallet(i) {
@@ -1494,6 +1906,7 @@ const btn = document.getElementById('btn-copy-canvas');
 const COPY_ICON  = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="9" height="10" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v7A1.5 1.5 0 0 0 3.5 12H5"/></svg>`;
 const CHECK_ICON = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 8 6 12 14 4"/></svg>`;
 const DL_ICON    = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v9M4 7l4 4 4-4"/><path d="M2 13h12"/></svg>`;
+const WARN_ICON  = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2L14 13H2L8 2z"/><line x1="8" y1="7" x2="8" y2="10"/><circle cx="8" cy="12" r="0.5" fill="currentColor"/></svg>`;
 const DEFAULT_COLOR = 'var(--accent)';
 const DEFAULT_BORDER = 'rgba(240,180,41,0.4)';
 
@@ -1510,8 +1923,33 @@ function setFeedback(icon, text, color, duration) {
   }, duration);
 }
 
+// 重複・範囲外チェック
+const hasError = placedPallets.some((p, i) => {
+  const c = getC();
+  return checkOverlap(p, i)
+    || p.x < 0 || p.y < 0
+    || (p.x + p.d) > c.L || (p.y + p.w) > c.W;
+});
+if (hasError) {
+  // 警告付きで続行するか確認
+  const warn = document.getElementById('copy-warn-popup');
+  if (warn) {
+    warn.style.display = 'flex';
+    document.getElementById('copy-warn-proceed').onclick = () => {
+      warn.style.display = 'none';
+      doCopy();
+    };
+    document.getElementById('copy-warn-cancel').onclick = () => {
+      warn.style.display = 'none';
+    };
+    return;
+  }
+}
+
 // 注釈テキスト（現在の言語から取得）
 const disclaimer = [t('noticeTitle'), ...t('noticeLines')];
+
+function doCopy() {
 
 // オフスクリーンcanvasを生成（メインcanvas + 下部余白＋注釈）
 function buildExportCanvas() {
@@ -1695,6 +2133,10 @@ function fallbackDownload(oc) {
   document.body.removeChild(a);
   setFeedback(DL_ICON, '保存しました', 'var(--accent)', 2500);
 }
+} // end doCopy
+
+// エラーがない場合はそのままコピー実行
+if (!hasError) doCopy();
 }
 
 // ─────────────────────────────────────────
@@ -1705,13 +2147,17 @@ window.addEventListener('resize', () => { setupCanvas(); render(); });
 function init() {
 setupCanvas();
 updateDimDisplay();
+// EURのみ選択状態にする（VMF・GMAはクリア）
 document.getElementById('eur-h').className = 'active-eur';
-document.getElementById('vmf-h').className = 'active-vmf';
-document.getElementById('gma-h').className = 'active-gma';
+document.getElementById('vmf-h').className = '';
+document.getElementById('vmf-v').className = '';
+document.getElementById('gma-h').className = '';
+document.getElementById('gma-v').className = '';
 setMode('fill');
 render();
 updateStats();
 updateHoldBanner();
+updateCenterInfo();
 }
 init();
 
@@ -1764,3 +2210,5 @@ init();
   };
 
 })();
+
+// greedyPack updated: top/bottom group layout v3
